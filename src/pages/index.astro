@@ -1,0 +1,59 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import HeroSection from '../components/HeroSection.astro';
+import CotizacionSection from '../components/CotizacionSection.astro';
+import ServiciosSection from '../components/ServiciosSection.astro';
+import TamanosSection from '../components/TamanosSection.astro';
+import SucursalesSection from '../components/SucursalesSection.astro';
+import RecomendacionSection from '../components/RecomendacionSection.astro';
+import Footer from '../components/Footer.astro';
+import SEO from '../components/SEO.astro';
+import { seoConfig, canonicalUrls, ogImages } from '../config/seo';
+
+// SEO configuration for Spanish homepage
+const seoData = {
+  ...seoConfig.es.home,
+  canonical: canonicalUrls.es.home,
+  ogImage: ogImages.home,
+  lang: 'es',
+  alternateUrl: canonicalUrls.en.home,
+  alternateLang: 'en'
+};
+---
+
+<Layout title={seoData.title}>
+	<!-- SEO optimizado en el head -->
+	<SEO 
+		title={seoData.title}
+		description={seoData.description}
+		keywords={seoData.keywords}
+		canonical={seoData.canonical}
+		ogImage={seoData.ogImage}
+		lang={seoData.lang}
+		alternateUrl={seoData.alternateUrl}
+		alternateLang={seoData.alternateLang}
+		slot="seo"
+	/>
+	
+	<Navbar />
+	<main id="main-content" role="main">
+		<HeroSection />
+		
+		<!-- Sección de Cotización -->
+		<CotizacionSection />
+		
+		<!-- Sección de Servicios -->
+		<ServiciosSection />
+		
+		<!-- Sección de Tamaños -->
+		<TamanosSection />
+		
+		<!-- Sección Sucursales -->
+		<SucursalesSection />
+		
+		<!-- Sección Recomendaciones -->
+		<RecomendacionSection />
+	</main>
+	<Footer />
+</Layout>

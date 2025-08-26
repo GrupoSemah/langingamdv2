@@ -1,0 +1,199 @@
+---
+// Sección de Cotización idéntica al prototipo de Figma
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<section id="cotizacion" class="py-4 sm:py-6 lg:py-8 flex items-center justify-center min-h-screen">
+  <div class="max-w-6xl lg:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex items-center justify-center">
+    
+    <!-- Card naranja centrada con fondo, patrón de dots y rounded-xl -->
+    <div class="bg-[var(--color-primary)] rounded-2xl p-6 sm:p-8 lg:p-10 relative overflow-hidden shadow-2xl">
+      <!-- Patrón de dots en el fondo -->
+      <div class="absolute inset-0 opacity-10">
+        <div class="w-full h-full" style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 20px 20px;"></div>
+      </div>
+      
+      <div class="relative z-10 grid lg:grid-cols-2 gap-6 lg:gap-8 items-start lg:items-center">
+        
+        <!-- Contenido izquierdo - Pregunta -->
+        <div class="text-white">
+          <h2 class="text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight">
+            {t('quote.title')}
+          </h2>
+        </div>
+        
+        <!-- Contenido derecho - Formulario de Pipedrive más ancho -->
+        <div class="bg-white rounded-2xl p-3 sm:p-4 lg:p-5 shadow-lg w-full">
+          {lang === 'en' ? (
+            <!-- English Pipedrive Form -->
+            <div class="pipedriveWebForms"
+                 data-pd-webforms="https://webforms.pipedrive.com/f/1DXO2arYktm3uaLISiSIT6xDmwJork1W7NRLR9mGZttKuN1Pb2YNsZSgb75d13Xmr"
+                 id="idxgylty-en">
+              <!-- Lazy load Pipedrive script for better bfcache performance -->
+              <script>
+                let pipedriveLoadedEn = false;
+                let pipedriveObserverEn: IntersectionObserver | null = null;
+                
+                // Load Pipedrive form when section is visible
+                function initializePipedriveFormEn() {
+                  if (pipedriveLoadedEn) return;
+                  
+                  pipedriveObserverEn = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                      if (entry.isIntersecting && !pipedriveLoadedEn) {
+                        const script = document.createElement('script');
+                        script.src = 'https://webforms.pipedrive.com/f/loader';
+                        script.async = true;
+                        script.onload = () => { pipedriveLoadedEn = true; };
+                        document.head.appendChild(script);
+                        pipedriveObserverEn?.disconnect();
+                        pipedriveObserverEn = null;
+                      }
+                    });
+                  }, { threshold: 0.1 });
+                  
+                  const formElement = document.getElementById('idxgylty-en');
+                  if (formElement) pipedriveObserverEn.observe(formElement);
+                }
+                
+                // Cleanup function for bfcache optimization
+                function cleanupPipedriveEn() {
+                  if (pipedriveObserverEn) {
+                    pipedriveObserverEn.disconnect();
+                    pipedriveObserverEn = null;
+                  }
+                  // Remove Pipedrive scripts and iframes for bfcache
+                  const pipedriveScripts = document.querySelectorAll('script[src*="pipedrive"]');
+                  pipedriveScripts.forEach(script => script.remove());
+                }
+                
+                // bfcache optimization event listeners
+                window.addEventListener('pagehide', cleanupPipedriveEn);
+                window.addEventListener('beforeunload', cleanupPipedriveEn);
+                
+                document.addEventListener('DOMContentLoaded', initializePipedriveFormEn);
+              </script>
+              <iframe
+                src="https://webforms.pipedrive.com/f/1DXO2arYktm3uaLISiSIT6xDmwJork1W7NRLR9mGZttKuN1Pb2YNsZSgb75d13Xmr?embeded=1&uuid=idxgylty-en"
+                name="https://almacenajes.net/?page_id=5234&preview=true-idxgylty-en"
+                title="Web Forms"
+                style="width: 100%; border: none; height: 596px;"
+                class="rounded-xl"
+                sandbox="allow-forms allow-scripts allow-same-origin"
+                referrerpolicy="strict-origin-when-cross-origin">
+              </iframe>
+            </div>
+          ) : (
+            <!-- Spanish Pipedrive Form -->
+            <div class="pipedriveWebForms"
+                 data-pd-webforms="https://webforms.pipedrive.com/f/30ZjsoyUUNVXItMSgeKPoBkCTPffsPlFQPjz4j5UwN2QDTG2DGlSgsHGoREn47ASD"
+                 id="idxgylty">
+              <!-- Lazy load Pipedrive script for better bfcache performance -->
+              <script>
+                let pipedriveLoaded = false;
+                let pipedriveObserver: IntersectionObserver | null = null;
+                
+                // Load Pipedrive form when section is visible
+                function initializePipedriveForm() {
+                  if (pipedriveLoaded) return;
+                  
+                  pipedriveObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                      if (entry.isIntersecting && !pipedriveLoaded) {
+                        const script = document.createElement('script');
+                        script.src = 'https://webforms.pipedrive.com/f/loader';
+                        script.async = true;
+                        script.onload = () => { pipedriveLoaded = true; };
+                        document.head.appendChild(script);
+                        pipedriveObserver?.disconnect();
+                        pipedriveObserver = null;
+                      }
+                    });
+                  }, { threshold: 0.1 });
+                  
+                  const formElement = document.getElementById('idxgylty');
+                  if (formElement) pipedriveObserver.observe(formElement);
+                }
+                
+                // Cleanup function for bfcache optimization
+                function cleanupPipedrive() {
+                  if (pipedriveObserver) {
+                    pipedriveObserver.disconnect();
+                    pipedriveObserver = null;
+                  }
+                  // Remove Pipedrive scripts and iframes for bfcache
+                  const pipedriveScripts = document.querySelectorAll('script[src*="pipedrive"]');
+                  pipedriveScripts.forEach(script => script.remove());
+                }
+                
+                // bfcache optimization event listeners
+                window.addEventListener('pagehide', cleanupPipedrive);
+                window.addEventListener('beforeunload', cleanupPipedrive);
+                
+                document.addEventListener('DOMContentLoaded', initializePipedriveForm);
+              </script>
+              <iframe
+                src="https://webforms.pipedrive.com/f/30ZjsoyUUNVXItMSgeKPoBkCTPffsPlFQPjz4j5UwN2QDTG2DGlSgsHGoREn47ASD?embeded=1&uuid=idxgylty"
+                name="https://almacenajes.net/?page_id=5234&preview=true-idxgylty"
+                title="Web Forms"
+                style="width: 100%; border: none; height: 100%; min-height: 600px;"
+                class="rounded-xl"
+                sandbox="allow-forms allow-scripts allow-same-origin"
+                referrerpolicy="strict-origin-when-cross-origin">
+              </iframe>
+            </div>
+          )}
+        </div>
+        
+      </div>
+    </div>
+    
+  </div>
+</section>
+
+<style>
+  /* Asegurar que el iframe se vea bien en todos los dispositivos sin scroll interno */
+  .pipedriveWebForms {
+    height: auto;
+    min-height: 600px;
+  }
+  
+  .pipedriveWebForms iframe {
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
+  
+  /* Responsive adjustments - alturas dinámicas sin scroll interno */
+  @media (max-width: 1024px) {
+    .pipedriveWebForms {
+      min-height: 650px;
+    }
+    
+    .pipedriveWebForms iframe {
+      min-height: 650px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .pipedriveWebForms {
+      min-height: 700px;
+    }
+    
+    .pipedriveWebForms iframe {
+      min-height: 700px;
+    }
+  }
+  
+  @media (max-width: 640px) {
+    .pipedriveWebForms {
+      min-height: 750px;
+    }
+    
+    .pipedriveWebForms iframe {
+      min-height: 750px;
+    }
+  }
+</style>

@@ -1,0 +1,233 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import BlogBreadcrumbs from '../components/BlogBreadcrumbs.astro';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+// Blog articles data
+const blogArticles: Array<{
+  id: number;
+  slug: string;
+  title: string;
+  excerpt: string;
+  image: string;
+  date: string;
+  author: string;
+  readTime: string;
+  category: string;
+  tags: string[];
+}> = [
+  {
+    id: 1,
+    slug: 'ventajas-de-alquilar-un-mini-deposito',
+    title: 'Ventajas de alquilar un mini depósito',
+    excerpt: 'El problema del espacio se ha convertido en un reto común donde los hogares y oficinas son cada vez más pequeños. Acumular pertenencias no solo genera desorden, también invade nuestra comodidad y productividad.',
+    image: '/Images/blog/Deposito.webp',
+    date: '2023-08-19',
+    author: 'Almacenajes Mini Depósitos',
+    readTime: '8 min',
+    category: 'Consejos',
+    tags: ['consejos', 'almacenamiento', 'ventajas']
+  },
+  {
+    id: 2,
+    slug: 'elige-el-tamano-ideal-para-tu-mini-deposito',
+    title: 'Elige el tamaño ideal para tu mini depósito',
+    excerpt: 'Encuentra el tamaño perfecto para mini depósitos que necesitas según lo que guardas y lo que puedes gastar.',
+    image: '/Images/blog/Deposito2.webp',
+    date: '2025-08-15',
+    author: 'Almacenajes Mini Depósitos',
+    readTime: '5 min',
+    category: 'Guías',
+    tags: ['tamaños', 'consejos', 'asesoramiento']
+  },
+  {
+    id: 3,
+    slug: 'guarda-tu-ropa-y-zapatos-sin-que-se-danen',
+    title: 'Guarda tu ropa y zapatos sin que se dañen',
+    excerpt: 'Sigue estos valiosos consejos para mantener tu ropa y zapatos en perfecto estado mientras están en nuestros depósitos.',
+    image: '/Images/blog/ropamujer.webp',
+    date: '2025-08-16',
+    author: 'Almacenajes Mini Depósitos',
+    readTime: '5 min',
+    category: 'Mudanza',
+    tags: ['almacenamiento', 'organización']
+  },
+  {
+    id: 4,
+    slug: 'sabes-que-guardar-en-un-mini-deposito',
+    title: '¿Sabes qué guardar en un mini depósito?',
+    excerpt: 'Si aún no tienes claro qué cosas puedes guardar, aquí te compartimos ideas de objetos de forma inteligente: ahorra espacio, optimiza el orden y protege lo esencial sin vueltas.',
+    image: '/Images/blog/embalaje.webp',
+    date: '2025-08-16',
+    author: 'Almacenajes Mini Depósitos',
+    readTime: '2 min',
+    category: 'Guías',
+    tags: ['consejos', 'almacenamiento']
+  },
+  {
+    id: 5,
+    slug: 'medidas-de-seguridad-antes-de-almacenar',
+    title: 'Medidas de seguridad antes de almacenar',
+    excerpt: 'Aplica estas recomendaciones antes de guardar tus cosas en los depósitos para prevenir cualquier eventualidad inesperada.',
+    image: '/Images/blog/portapapeles.webp',
+    date: '2025-08-18',
+    author: 'Almacenajes Mini Depósitos',
+    readTime: '3 min',
+    category: 'Seguridad',
+    tags: ['recomendaciones', 'protección', 'almacenaje']
+  }
+];
+
+const pageTitle = lang === 'es' ? 'Blog - Almacenajes Minidepósitos' : 'Blog - Almacenajes Minidepósitos';
+const pageDescription = lang === 'es' 
+  ? 'Consejos, guías y noticias sobre almacenamiento y mini depósitos en Panamá. Aprende cómo aprovechar al máximo tu espacio de almacenaje.'
+  : 'Tips, guides and news about storage and mini warehouses in Panama. Learn how to make the most of your storage space.';
+---
+
+<Layout 
+  title={pageTitle}
+  description={pageDescription}
+>
+  <!-- Schema.org BlogPosting structured data -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "name": lang === 'es' ? 'Blog - Almacenajes Minidepósitos - AMD' : 'Almacenajes Minidepósitos Blog - AMD',
+    "description": pageDescription,
+    "url": `https://almacenajes-minidepositos.com${lang === 'en' ? '/en' : ''}/blog`,
+    "publisher": {
+      "@type": "Organization",
+      "name": "Almacenajes Minidepósitos",
+      "url": "https://almacenajes-minidepositos.com"
+    },
+    "blogPost": blogArticles.map(article => ({
+      "@type": "BlogPosting",
+      "headline": article.title,
+      "description": article.excerpt,
+      "url": `https://almacenajes-minidepositos.com${lang === 'en' ? '/en' : ''}/blog/${article.slug}`,
+      "datePublished": article.date,
+      "author": {
+        "@type": "Organization",
+        "name": article.author
+      },
+      "image": `https://almacenajes-minidepositos.com${article.image}`,
+      "articleSection": article.category,
+      "keywords": article.tags.join(', ')
+    }))
+  })} />
+
+  <!-- Navbar -->
+  <Navbar />
+
+  <main class="pt-16">
+    <!-- Breadcrumbs -->
+    <BlogBreadcrumbs />
+    
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-br from-gray-50 to-gray-100 py-16 lg:py-20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+          <h1 class="text-4xl lg:text-5xl font-bold text-[var(--color-dark)] mb-6">
+            {lang === 'es' ? 'Blog - Almacenajes Minidepósitos' : 'Blog - Almacenajes Minidepósitos'}
+          </h1>
+          <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            {lang === 'es' 
+              ? 'Consejos expertos, guías prácticas y las últimas noticias sobre almacenamiento y mini depósitos en Panamá.'
+              : 'Expert tips, practical guides and the latest news about storage and mini warehouses in Panama.'
+            }
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Blog Articles Grid -->
+    <section class="py-16 lg:py-20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {blogArticles.map((article) => (
+            <article class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div class="relative">
+                <img 
+                  src={article.image} 
+                  alt={article.title}
+                  class="w-full h-48 object-cover"
+                  loading="lazy"
+                >
+                <div class="absolute top-4 left-4">
+                  <span class="bg-[var(--color-primary)] text-white px-3 py-1 rounded-full text-sm font-medium">
+                    {article.category}
+                  </span>
+                </div>
+              </div>
+              
+              <div class="p-6">
+                <div class="flex items-center text-sm text-gray-500 mb-3">
+                  <time datetime={article.date}>
+                    {new Date(article.date).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </time>
+                  <span class="mx-2">•</span>
+                  <span>{article.readTime}</span>
+                </div>
+                
+                <h2 class="text-xl font-bold text-[var(--color-dark)] mb-3 line-clamp-2">
+                  {article.title}
+                </h2>
+                
+                <p class="text-gray-600 mb-4 line-clamp-3">
+                  {article.excerpt}
+                </p>
+                
+                <div class="flex flex-wrap gap-2 mb-4">
+                  {article.tags.slice(0, 2).map((tag) => (
+                    <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+                
+                <a 
+                  href={`/blog/${article.slug}`}
+                  class="inline-flex items-center text-[var(--color-primary)] font-medium hover:text-[var(--color-primary)]/80 transition-colors duration-200"
+                >
+                  {lang === 'es' ? 'Leer más' : 'Read more'}
+                  <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </a>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <Footer />
+</Layout>
+
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>

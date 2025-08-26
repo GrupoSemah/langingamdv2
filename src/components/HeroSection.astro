@@ -1,0 +1,68 @@
+---
+// Hero section idéntico al prototipo de Figma
+import AnimatedCTAButton from './AnimatedCTAButton.astro';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<section id="hero" class="relative min-h-screen flex items-center bg-white overflow-hidden">
+  <!-- Patrón de puntitos en el fondo -->
+  <div class="absolute inset-0 opacity-10">
+    <div class="dots-pattern w-full h-full"></div>
+  </div>
+  <!-- Main Content -->
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
+    <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      
+      <!-- Left Content -->
+      <div class="space-y-8 mt-8 lg:mt-12 lg:pr-8">
+        <div class="space-y-8">
+          <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-[var(--color-dark)] text-center lg:text-left">
+            <span class="block md:hidden mb-1">
+              {t('hero.title.line1')}
+            </span>
+            <span class="block md:hidden text-[var(--color-dark)]">
+              {t('hero.title.line2')} <span class="text-[var(--color-primary)]">{t('hero.title.highlight')}</span>
+            </span>
+            <span class="hidden md:block text-[var(--color-dark)] text-center lg:text-left">
+              {t('hero.title.line1')} {t('hero.title.line2')} <span class="text-[var(--color-primary)]">{t('hero.title.highlight')}</span>
+            </span>
+          </h1>
+          
+          <!-- CTA Button Animado - Movido donde estaba la descripción -->
+          <div class="flex justify-center lg:justify-start">
+            <AnimatedCTAButton 
+              href="#cotizacion" 
+              text={t('hero.cta')}
+            />
+          </div>
+        </div>
+      </div>
+      
+      <!-- Right Content - Hero Image -->
+      <div class="lg:pl-8 relative">
+        <div class="relative">
+          <img 
+            src="/Images/heroimage.webp" 
+            alt="Hombre con cajas de almacenamiento" 
+            class="w-full h-auto max-w-lg mx-auto"
+            width="512"
+            height="512"
+            loading="eager"
+            fetchpriority="high"
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .dots-pattern {
+    background-image: radial-gradient(circle, #222222 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
+  }
+</style>

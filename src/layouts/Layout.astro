@@ -1,0 +1,168 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import CookieConsent from '../components/CookieConsent.astro';
+import BfcacheOptimizer from '../components/BfcacheOptimizer.astro';
+import PerformanceMonitor from '../components/PerformanceMonitor.astro';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+import '../styles/global.css';
+
+export interface Props {
+	title?: string;
+	description?: string;
+}
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+// Títulos y descripciones localizados por defecto
+const defaultTitles = {
+	es: "Almacenajes Minidepósitos",
+	en: "Almacenajes Minidepósitos - Self Storage"
+};
+
+const defaultDescriptions = {
+	es: "Servicios profesionales de almacenamiento y mini depósitos. Análisis de movimientos, precios transparentes y soluciones personalizadas para tus necesidades.",
+	en: "Professional storage services and self storage units. Movement analysis, transparent pricing, and customized solutions for your storage needs."
+};
+
+const { 
+	title = defaultTitles[lang], 
+	description = defaultDescriptions[lang] 
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang={lang}>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+		
+		<!-- Security headers (X-Frame-Options moved to _headers file) -->
+		<meta http-equiv="X-Content-Type-Options" content="nosniff" />
+		<meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+		<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+		
+		<!-- Preconnect to external domains for faster loading -->
+		<link rel="preconnect" href="https://api.mapbox.com" crossorigin>
+		<link rel="preconnect" href="https://webforms.pipedrive.com" crossorigin>
+		
+		<!-- Preload Gilroy fonts for better performance -->
+		<link rel="preload" href="/fonts/Gilroy-Light.woff" as="font" type="font/woff" crossorigin>
+		<link rel="preload" href="/fonts/Gilroy-Extrabold.woff" as="font" type="font/woff" crossorigin>
+		
+		<!-- Favicon optimizado -->
+		<link rel="icon" type="image/webp" href="/favicon.webp" />
+		<link rel="manifest" href="/site.webmanifest" />
+		
+		<!-- Meta tags básicos -->
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		
+		<!-- Theme color para PWA -->
+		<meta name="theme-color" content="#EF7B34" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+		
+		<!-- Gilroy Font Declarations -->
+		<style>
+			@font-face {
+				font-family: 'Gilroy';
+				src: url('/fonts/Gilroy-Light.woff') format('woff');
+				font-weight: 300;
+				font-style: normal;
+				font-display: swap;
+			}
+			
+			@font-face {
+				font-family: 'Gilroy';
+				src: url('/fonts/Gilroy-Extrabold.woff') format('woff');
+				font-weight: 800;
+				font-style: normal;
+				font-display: swap;
+			}
+			
+			body {
+				font-family: 'Gilroy', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+				font-display: swap;
+			}
+		</style>
+		
+		<ClientRouter />
+		
+		<!-- Google tag (gtag.js) -->
+		<script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-W9FEEJYKVT"></script>
+		<script is:inline>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+			gtag('config', 'G-W9FEEJYKVT');
+		</script>
+		
+		<!-- Microsoft Clarity (mapa de calor) -->
+		<script is:inline type="text/javascript">
+			(function(c,l,a,r,i,t,y){
+				c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+				t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+				y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+			})(window, document, "clarity", "script", "rnouqnobtw");
+		</script>
+		
+		<!-- Slot para SEO component desde pages -->
+		<slot name="seo" />
+	</head>
+	<body>
+		<!-- Skip to main content para accesibilidad -->
+		<a href="#main-content" class="skip-link sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded">
+			Saltar al contenido principal
+		</a>
+		
+		<slot />
+		
+		<!-- Cookie Consent Banner -->
+		<CookieConsent />
+		
+		<!-- bfcache Optimization -->
+		<BfcacheOptimizer />
+		
+		<!-- Performance Monitoring -->
+		<PerformanceMonitor />
+		
+		<!-- Structured data para breadcrumbs -->
+		<script type="application/ld+json">
+		{
+			"@context": "https://schema.org",
+			"@type": "BreadcrumbList",
+			"itemListElement": [
+				{
+					"@type": "ListItem",
+					"position": 1,
+					"name": "Inicio",
+					"item": "https://almacenajes-minidepositos.com/"
+				}
+			]
+		}
+		</script>
+	</body>
+</html>
+
+<style is:global>
+	html {
+		scroll-behavior: smooth;
+	}
+	
+	html,
+	body {
+		margin: 0;
+		padding: 0;
+		width: 100%;
+		height: 100%;
+		font-family: 'Gilroy', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		color: var(--color-dark);
+		background-color: var(--color-white);
+	}
+	
+	* {
+		box-sizing: border-box;
+	}
+</style>

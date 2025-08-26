@@ -1,0 +1,258 @@
+---
+// Performance monitoring component with User Timing API
+// Tracks key user experience metrics for real-world performance analysis
+---
+
+<script>
+  // Performance monitoring with User Timing API
+  class PerformanceMonitor {
+    private static instance: PerformanceMonitor;
+    private marks: Map<string, number> = new Map();
+    
+    static getInstance(): PerformanceMonitor {
+      if (!PerformanceMonitor.instance) {
+        PerformanceMonitor.instance = new PerformanceMonitor();
+      }
+      return PerformanceMonitor.instance;
+    }
+    
+    // Mark the start of a performance measurement
+    mark(name: string): void {
+      try {
+        performance.mark(`amd-${name}-start`);
+        this.marks.set(name, performance.now());
+      } catch (e) {
+        console.warn('Performance marking failed:', e);
+      }
+    }
+    
+    // Measure the duration since the mark
+    measure(name: string, endName?: string): number {
+      try {
+        const startTime = this.marks.get(name);
+        const currentTime = performance.now();
+        const duration = startTime ? currentTime - startTime : 0;
+        
+        performance.mark(`amd-${name}-end`);
+        performance.measure(`amd-${name}`, `amd-${name}-start`, `amd-${name}-end`);
+        
+        // Log to console for debugging (only in development)
+        if (import.meta.env.DEV) {
+          console.log(`⏱️ ${name}: ${duration.toFixed(2)}ms`);
+        }
+        
+        return duration;
+      } catch (e) {
+        console.warn('Performance measurement failed:', e);
+        return 0;
+      }
+    }
+    
+    // Get all performance entries
+    getEntries(): PerformanceEntry[] {
+      try {
+        return performance.getEntriesByType('measure').filter(entry => 
+          entry.name.startsWith('amd-')
+        );
+      } catch (e) {
+        console.warn('Failed to get performance entries:', e);
+        return [];
+      }
+    }
+    
+    // Report performance metrics (for analytics)
+    reportMetrics(): void {
+      try {
+        const entries = this.getEntries();
+        const metrics: Record<string, number> = {};
+        
+        entries.forEach(entry => {
+          metrics[entry.name] = entry.duration;
+        });
+        
+        // Send to analytics if available
+        if (typeof (window as any).gtag !== 'undefined') {
+          (window as any).gtag('event', 'performance_metrics', {
+            custom_map: metrics
+          });
+        }
+        
+        // Log summary in development
+        if (import.meta.env.DEV) {
+          console.table(metrics);
+        }
+        
+      } catch (e) {
+        console.warn('Failed to report metrics:', e);
+      }
+    }
+  }
+  
+  // Initialize performance monitoring
+  document.addEventListener('DOMContentLoaded', () => {
+    const monitor = PerformanceMonitor.getInstance();
+    
+    // Mark critical performance points
+    monitor.mark('dom-ready');
+    
+    // Monitor hero section load
+    const heroSection = document.querySelector('#hero');
+    if (heroSection) {
+      monitor.mark('hero-start');
+      
+      // Use intersection observer to detect when hero is visible
+      const heroObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            monitor.measure('hero-start');
+            heroObserver.disconnect();
+          }
+        });
+      }, { threshold: 0.1 });
+      
+      heroObserver.observe(heroSection);
+    }
+    
+    // Monitor form interactions
+    const forms = document.querySelectorAll('form, .pipedriveWebForms');
+    forms.forEach((form, index) => {
+      form.addEventListener('focus', () => {
+        monitor.mark(`form-${index}-interaction`);
+      }, { once: true });
+      
+      form.addEventListener('submit', () => {
+        monitor.measure(`form-${index}-interaction`);
+      });
+    });
+    
+    // Monitor map loading
+    const mapContainer = document.querySelector('#map-container');
+    if (mapContainer) {
+      monitor.mark('map-start');
+      
+      // Listen for map load completion
+      window.addEventListener('mapbox-loaded', () => {
+        monitor.measure('map-start');
+      });
+    }
+    
+    // Monitor carousel interactions
+    const carousels = document.querySelectorAll('[data-carousel]');
+    carousels.forEach((carousel, index) => {
+      const buttons = carousel.querySelectorAll('button');
+      buttons.forEach(button => {
+        button.addEventListener('click', () => {
+          monitor.mark(`carousel-${index}-interaction`);
+          setTimeout(() => {
+            monitor.measure(`carousel-${index}-interaction`);
+          }, 300); // Allow for animation to complete
+        }, { once: true });
+      });
+    });
+    
+    // Monitor page load completion
+    window.addEventListener('load', () => {
+      monitor.measure('dom-ready');
+      
+      // Report all metrics after page load
+      setTimeout(() => {
+        monitor.reportMetrics();
+      }, 1000);
+    });
+    
+    // Monitor navigation performance (for SPA-like behavior)
+    window.addEventListener('popstate', () => {
+      monitor.mark('navigation');
+      setTimeout(() => {
+        monitor.measure('navigation');
+      }, 100);
+    });
+    
+    // Make monitor globally available for debugging
+    (window as any).performanceMonitor = monitor;
+  });
+  
+  // Core Web Vitals monitoring
+  function monitorCoreWebVitals() {
+    try {
+      // Monitor LCP (Largest Contentful Paint)
+      new PerformanceObserver((entryList) => {
+        const entries = entryList.getEntries();
+        const lastEntry = entries[entries.length - 1];
+        
+        performance.mark('amd-lcp');
+        performance.measure('amd-lcp-time', 'navigationStart', 'amd-lcp');
+        
+        if (import.meta.env.DEV) {
+          console.log(`🎯 LCP: ${lastEntry.startTime.toFixed(2)}ms`);
+        }
+      }).observe({ entryTypes: ['largest-contentful-paint'] });
+      
+      // Monitor FID (First Input Delay)
+      new PerformanceObserver((entryList) => {
+        const entries = entryList.getEntries();
+        entries.forEach(entry => {
+          performance.mark('amd-fid');
+          
+          if (import.meta.env.DEV) {
+            console.log(`⚡ FID: ${(entry as any).processingStart - entry.startTime}ms`);
+          }
+        });
+      }).observe({ entryTypes: ['first-input'] });
+      
+      // Monitor CLS (Cumulative Layout Shift)
+      new PerformanceObserver((entryList) => {
+        let clsValue = 0;
+        const entries = entryList.getEntries();
+        
+        entries.forEach(entry => {
+          if (!(entry as any).hadRecentInput) {
+            clsValue += (entry as any).value;
+          }
+        });
+        
+        performance.mark('amd-cls');
+        
+        if (import.meta.env.DEV) {
+          console.log(`📐 CLS: ${clsValue.toFixed(4)}`);
+        }
+      }).observe({ entryTypes: ['layout-shift'] });
+      
+    } catch (e) {
+      console.warn('Core Web Vitals monitoring not supported:', e);
+    }
+  }
+  
+  // Initialize Core Web Vitals monitoring
+  monitorCoreWebVitals();
+</script>
+
+<style>
+  /* Performance monitoring styles (hidden by default) */
+  .performance-debug {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 12px;
+    z-index: 9999;
+    display: none;
+  }
+  
+  /* Show debug info in development */
+  @media (max-width: 0px) {
+    .performance-debug {
+      display: block;
+    }
+  }
+</style>
+
+<!-- Performance debug panel (only visible in development) -->
+<div class="performance-debug" id="performance-debug">
+  <div>Performance Monitor Active</div>
+  <div id="performance-metrics"></div>
+</div>

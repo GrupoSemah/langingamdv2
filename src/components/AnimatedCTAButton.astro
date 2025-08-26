@@ -1,0 +1,50 @@
+---
+// Componente de botón CTA animado con efecto de relleno
+interface Props {
+  href: string;
+  text: string;
+  className?: string;
+}
+
+const { href, text, className = "" } = Astro.props;
+---
+
+<a 
+  href={href}
+  class={`group relative inline-flex items-center border-2 border-[var(--color-primary)] text-[var(--color-dark)] pl-2 pr-8 py-2 rounded-full font-medium text-lg transition-all duration-300 hover:text-white overflow-hidden ${className}`}
+>
+  <!-- Texto del botón que se mueve y cambia de color -->
+  <span class="relative z-30 ml-16 transition-all duration-500 ease-out group-hover:-translate-x-12 group-hover:text-white pointer-events-none">{text}</span>
+  
+  <!-- Fondo de relleno animado que cubre el texto -->
+  <div class="absolute inset-0 bg-[var(--color-primary)] transform scale-x-0 origin-left transition-transform duration-500 ease-out group-hover:scale-x-100 rounded-full z-20 pointer-events-none"></div>
+  
+  <!-- Botón de flecha que se mueve con el relleno -->
+  <div class="absolute left-0 -top-1 z-30 w-13 h-13 bg-[var(--color-primary)] rounded-full flex items-center justify-center transition-all duration-500 ease-out group-hover:translate-x-56 pointer-events-none">
+    <svg 
+      class="w-6 h-6 text-white" 
+      viewBox="0 0 24 24" 
+      fill="none"
+    >
+      <path 
+        d="M5 12h14m-7-7l7 7-7 7" 
+        stroke="currentColor" 
+        stroke-width="2" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"
+      />
+    </svg>
+  </div>
+</a>
+
+<style>
+  /* Animación suave del relleno */
+  a:hover .absolute {
+    transform: scaleX(1);
+  }
+  
+  /* Efecto de hover sin sombra */
+  a:hover {
+    transform: translateY(-2px);
+  }
+</style>

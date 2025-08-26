@@ -1,0 +1,247 @@
+---
+import { getLangFromUrl, useTranslations, getLocalizedPath } from '../i18n/utils';
+import LanguageToggle from './LanguageToggle.astro';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+// Detectar si estamos en una página de blog
+const isOnBlogPage = Astro.url.pathname.includes('/blog');
+const homeUrl = lang === 'en' ? '/en/' : '/';
+---
+
+<nav class="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm" role="navigation" aria-label="Navegación principal">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      
+      <!-- Logo -->
+      <div class="flex-shrink-0">
+        <a href={isOnBlogPage ? homeUrl : "#hero"} class="flex items-center" aria-label="Ir al inicio">
+          <img 
+            src="/Images/amdlogo.webp" 
+            alt="Almacenajes Mini Depósitos - Logo" 
+            class="h-8 w-auto"
+            width="120"
+            height="32"
+            loading="eager"
+            fetchpriority="high"
+          >
+        </a>
+      </div>
+      
+      <!-- Navigation Links - Desktop -->
+      <div class="hidden lg:flex" role="menubar">
+        <div class="flex items-center space-x-8">
+          <a 
+            href={isOnBlogPage ? homeUrl + "#hero" : "#hero"}
+            class="text-gray-700 hover:text-[var(--color-primary)] text-sm font-bold transition-colors duration-200"
+          >
+            {t('nav.home')}
+          </a>
+          <a 
+            href={isOnBlogPage ? homeUrl + "#cotizacion" : "#cotizacion"}
+            class="text-gray-700 hover:text-[var(--color-primary)] text-sm font-bold transition-colors duration-200"
+          >
+            {t('nav.quote')}
+          </a>
+          <a 
+            href={isOnBlogPage ? homeUrl + "#sucursales" : "#sucursales"}
+            class="text-gray-700 hover:text-[var(--color-primary)] text-sm font-bold transition-colors duration-200"
+          >
+            {t('nav.locations')}
+          </a>
+          <a 
+            href={isOnBlogPage ? homeUrl + "#servicios" : "#servicios"}
+            class="text-gray-700 hover:text-[var(--color-primary)] text-sm font-bold transition-colors duration-200"
+          >
+            {t('nav.services')}
+          </a>
+          <a 
+            href={isOnBlogPage ? homeUrl + "#tamanos" : "#tamanos"}
+            class="text-gray-700 hover:text-[var(--color-primary)] text-sm font-bold transition-colors duration-200"
+          >
+            {t('nav.sizes')}
+          </a>
+          <a 
+            href={isOnBlogPage ? homeUrl + "#recomendaciones" : "#recomendaciones"}
+            class="text-gray-700 hover:text-[var(--color-primary)] text-sm font-bold transition-colors duration-200"
+          >
+            {t('nav.recommendations')}
+          </a>
+          <a 
+            href="/blog" 
+            class="text-gray-700 hover:text-[var(--color-primary)] text-sm font-bold transition-colors duration-200"
+          >
+            {t('nav.blog')}
+          </a>
+        </div>
+      </div>
+      
+      <!-- Language Toggle & CTA Button - Desktop -->
+      <div class="hidden lg:flex items-center space-x-4">
+        <!-- Language Toggle -->
+        <LanguageToggle />
+        
+        <!-- CTA Button -->
+        <a 
+          href={isOnBlogPage ? homeUrl + "#cotizacion" : "#cotizacion"}
+          class="bg-[var(--color-primary)] text-white px-6 py-2 rounded-full text-sm font-medium border-2 border-[var(--color-primary)] hover:bg-[var(--color-white)] hover:text-[var(--color-primary)] transition-colors duration-200"
+        >
+          {t('common.contact')}
+        </a>
+      </div>
+      
+      <!-- Mobile menu button -->
+      <div class="lg:hidden">
+        <button 
+          type="button" 
+          class="mobile-menu-button p-2 rounded-md text-[var(--color-dark)] hover:text-[var(--color-primary)] hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 transition-colors duration-200"
+          aria-label={t('nav.menu') || 'Abrir menú'}
+          aria-expanded="false"
+          aria-controls="mobile-menu"
+        >
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Mobile menu -->
+  <div class="mobile-menu hidden lg:hidden" id="mobile-menu" role="menu" aria-labelledby="mobile-menu-button">
+    <div class="px-4 pt-2 pb-4 space-y-2 bg-white border-t border-gray-100 shadow-lg">
+      <a 
+        href={isOnBlogPage ? homeUrl + "#hero" : "#hero"}
+        class="block px-4 py-3 text-base font-bold text-gray-700 hover:text-[var(--color-primary)] hover:bg-gray-50 rounded-lg transition-colors duration-200"
+      >
+        {t('nav.home')}
+      </a>
+      <a 
+        href={isOnBlogPage ? homeUrl + "#cotizacion" : "#cotizacion"}
+        class="block px-4 py-3 text-base font-bold text-gray-700 hover:text-[var(--color-primary)] hover:bg-gray-50 rounded-lg transition-colors duration-200"
+      >
+        {t('nav.quote')}
+      </a>
+      <a 
+        href={isOnBlogPage ? homeUrl + "#sucursales" : "#sucursales"}
+        class="block px-4 py-3 text-base font-bold text-gray-700 hover:text-[var(--color-primary)] hover:bg-gray-50 rounded-lg transition-colors duration-200"
+      >
+        {t('nav.locations')}
+      </a>
+      <a 
+        href={isOnBlogPage ? homeUrl + "#servicios" : "#servicios"}
+        class="block px-4 py-3 text-base font-bold text-gray-700 hover:text-[var(--color-primary)] hover:bg-gray-50 rounded-lg transition-colors duration-200"
+      >
+        {t('nav.services')}
+      </a>
+      <a 
+        href={isOnBlogPage ? homeUrl + "#tamanos" : "#tamanos"}
+        class="block px-4 py-3 text-base font-bold text-gray-700 hover:text-[var(--color-primary)] hover:bg-gray-50 rounded-lg transition-colors duration-200"
+      >
+        {t('nav.sizes')}
+      </a>
+      <a 
+        href={isOnBlogPage ? homeUrl + "#recomendaciones" : "#recomendaciones"}
+        class="block px-4 py-3 text-base font-bold text-gray-700 hover:text-[var(--color-primary)] hover:bg-gray-50 rounded-lg transition-colors duration-200"
+      >
+        {t('nav.recommendations')}
+      </a>
+      <a 
+        href="/blog" 
+        class="block px-4 py-3 text-base font-bold text-gray-700 hover:text-[var(--color-primary)] hover:bg-gray-50 rounded-lg transition-colors duration-200"
+      >
+        {t('nav.blog')}
+      </a>
+      
+      <!-- Mobile CTA -->
+      <div class="pt-4">
+        <a 
+          href={isOnBlogPage ? homeUrl + "#cotizacion" : "#cotizacion"}
+          class="block w-full bg-[var(--color-primary)] text-white text-center px-6 py-3 rounded-full font-medium border-2 border-[var(--color-primary)] hover:bg-[var(--color-white)] hover:text-[var(--color-primary)] transition-colors duration-200"
+        >
+          {t('common.contact')}
+        </a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const mobileMenuButton = document.querySelector('.mobile-menu-button');
+    const mobileMenu = document.querySelector('.mobile-menu');
+    
+    if (mobileMenuButton && mobileMenu) {
+      mobileMenuButton.addEventListener('click', function() {
+        mobileMenu.classList.toggle('hidden');
+      });
+    }
+    
+    // Cerrar menú móvil al hacer clic en enlaces
+    if (mobileMenu) {
+      const mobileLinks = mobileMenu.querySelectorAll('a');
+      mobileLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          if (mobileMenu) {
+            mobileMenu.classList.add('hidden');
+          }
+        });
+      });
+    }
+    
+    // Smooth scroll para todos los enlaces de anclaje
+    const navLinks = document.querySelectorAll('a[href^="#"]');
+    navLinks.forEach(link => {
+      link.addEventListener('click', function(e: Event) {
+        e.preventDefault();
+        const target = e.target as HTMLAnchorElement;
+        const targetId = target.getAttribute('href');
+        const targetElement = document.querySelector(targetId || '');
+        
+        if (targetElement) {
+          const element = targetElement as HTMLElement;
+          // Ajuste específico para diferentes secciones
+          let offsetAdjustment = 80; // Default para navbar fijo
+          
+          // Para la sección de cotización, usar menos offset para centrarla mejor
+          if (targetId === '#cotizacion') {
+            offsetAdjustment = 20;
+          }
+          
+          const offsetTop = element.offsetTop - offsetAdjustment;
+          window.scrollTo({
+            top: Math.max(0, offsetTop), // Asegurar que no sea negativo
+            behavior: 'smooth'
+          });
+        }
+      });
+    });
+    
+    // Highlight active section en navbar
+    const sections = document.querySelectorAll('section[id]');
+    const navLinksArray = Array.from(document.querySelectorAll('nav a[href^="#"]'));
+    
+    function highlightActiveSection() {
+      const scrollPos = window.scrollY + 100;
+      
+      sections.forEach(section => {
+        const sectionElement = section as HTMLElement;
+        const sectionTop = sectionElement.offsetTop;
+        const sectionHeight = sectionElement.offsetHeight;
+        const sectionId = section.getAttribute('id');
+        
+        if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
+          navLinksArray.forEach(link => {
+            link.classList.remove('border-[var(--color-primary)]', 'text-[var(--color-primary)]');
+            if (link.getAttribute('href') === `#${sectionId}`) {
+              link.classList.add('border-[var(--color-primary)]', 'text-[var(--color-primary)]');
+            }
+          });
+        }
+      });
+    }
+    
+    window.addEventListener('scroll', highlightActiveSection);
+  });
+</script>

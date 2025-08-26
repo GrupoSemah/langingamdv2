@@ -1,0 +1,496 @@
+---
+// Sección de Recomendaciones de Almacenamiento - Versión Completa Exacta
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<section id="recomendaciones" class="py-20 bg-gradient-to-b from-gray-50 to-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Título Principal -->
+    <div class="text-center mb-16">
+      <h2 class="text-3xl md:text-4xl font-bold text-[var(--color-dark)] mb-6">
+        {t('recommendations.title.line1')} 
+        <span class="text-[var(--color-primary)]">{t('recommendations.title.highlight')}</span>
+        {t('recommendations.title.line2')}
+      </h2>
+    </div>
+
+    <!-- Acordeón de Recomendaciones -->
+    <div class="max-w-4xl mx-auto">
+      <div class="space-y-4">
+        
+        <!-- 1. Evaluar la necesidad de tener espacio en casa -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <button 
+            class="accordion-button w-full px-8 py-6 text-left flex items-center justify-between hover:bg-orange-50 transition-all duration-300 group"
+            onclick="toggleAccordion('accordion-1')"
+          >
+            <h3 class="text-xl font-bold text-[var(--color-dark)] group-hover:text-[var(--color-primary)] transition-colors duration-300">
+              {t('recommendations.accordion1.title')}
+            </h3>
+            <svg class="accordion-icon w-6 h-6 text-gray-400 group-hover:text-[var(--color-primary)] transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          <div id="accordion-1" class="accordion-content hidden">
+            <div class="px-8 pb-6">
+              <p class="text-gray-700 leading-relaxed">
+                {t('recommendations.accordion1.content')}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Organizar artículos por categorías -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <button 
+              class="accordion-button w-full px-8 py-6 text-left flex items-center justify-between hover:bg-orange-50 transition-all duration-300 group"
+              onclick="toggleAccordion('accordion-2')"
+            >
+              <h3 class="text-xl font-bold text-[var(--color-dark)] group-hover:text-[var(--color-primary)] transition-colors duration-300">
+                {t('recommendations.accordion2.title')}
+              </h3>
+              <svg class="accordion-icon w-6 h-6 text-gray-400 group-hover:text-[var(--color-primary)] transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            <div id="accordion-2" class="accordion-content hidden">
+              <div class="px-8 pb-6">
+                <p class="text-gray-700 leading-relaxed">
+                  {t('recommendations.accordion2.content')}
+                </p>
+              </div>
+            </div>
+          </div>
+
+       
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <button 
+            class="accordion-button w-full px-8 py-6 text-left flex items-center justify-between hover:bg-orange-50 transition-all duration-300 group"
+            onclick="toggleAccordion('accordion-3')"
+          >
+            <div class="flex items-center space-x-4">
+              
+              <h3 class="text-xl font-bold text-[var(--color-dark)] group-hover:text-[var(--color-primary)] transition-colors duration-300">
+                {t('recommendations.accordion3.alt_title')}
+              </h3>
+            </div>
+            <svg class="accordion-icon w-6 h-6 text-gray-400 group-hover:text-[var(--color-primary)] transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          <div id="accordion-3" class="accordion-content hidden">
+            <div class="px-8 pb-6">
+              <p class="text-gray-700 leading-relaxed">
+                {t('recommendations.accordion3.content')}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recomendación 3: Preparar artículos -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <button 
+            class="accordion-button w-full px-8 py-6 text-left flex items-center justify-between hover:bg-orange-50 transition-all duration-300 group"
+            onclick="toggleAccordion('accordion-4')"
+          >
+            <div class="flex items-center space-x-4">
+              
+              <h3 class="text-xl font-bold text-[var(--color-dark)] group-hover:text-[var(--color-primary)] transition-colors duration-300">
+                {t('recommendations.accordion3.title')}
+              </h3>
+            </div>
+            <svg class="accordion-icon w-6 h-6 text-gray-400 group-hover:text-[var(--color-primary)] transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          <div id="accordion-4" class="accordion-content hidden">
+            <div class="px-8 pb-6">
+              <ul class="space-y-3">
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion3.tip1')}</span>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion3.tip2')}</span>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion3.tip3')}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recomendación 4: Guardar en cajas -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <button 
+            class="accordion-button w-full px-8 py-6 text-left flex items-center justify-between hover:bg-orange-50 transition-all duration-300 group"
+            onclick="toggleAccordion('accordion-5')"
+          >
+            <div class="flex items-center space-x-4">
+              
+              <h3 class="text-xl font-bold text-[var(--color-dark)] group-hover:text-[var(--color-primary)] transition-colors duration-300">
+                {t('recommendations.accordion4.title')}
+              </h3>
+            </div>
+            <svg class="accordion-icon w-6 h-6 text-gray-400 group-hover:text-[var(--color-primary)] transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          <div id="accordion-5" class="accordion-content hidden">
+            <div class="px-8 pb-6">
+              <ul class="space-y-3">
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion4.tip1')}</span>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion4.tip2')}</span>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion4.tip3')}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recomendación 5: Transporte -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <button 
+            class="accordion-button w-full px-8 py-6 text-left flex items-center justify-between hover:bg-orange-50 transition-all duration-300 group"
+            onclick="toggleAccordion('accordion-6')"
+          >
+            <div class="flex items-center space-x-4">
+             
+              <h3 class="text-xl font-bold text-[var(--color-dark)] group-hover:text-[var(--color-primary)] transition-colors duration-300">
+               {t('recommendations.accordion5.title')}
+               </h3>
+            </div>
+            <svg class="accordion-icon w-6 h-6 text-gray-400 group-hover:text-[var(--color-primary)] transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          <div id="accordion-6" class="accordion-content hidden">
+            <div class="px-8 pb-6">
+              <ul class="space-y-3">
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion5.tip1')}</span>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion5.tip2')}</span>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion5.tip3')}</span>
+                </li>
+              </ul>
+                  <span class="text-gray-700">{t('recommendations.vehicle_access')}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recomendación 6: Almacenaje de cajas -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <button 
+            class="accordion-button w-full px-8 py-6 text-left flex items-center justify-between hover:bg-orange-50 transition-all duration-300 group"
+            onclick="toggleAccordion('accordion-7')"
+          >
+            <h3 class="text-xl font-bold text-[var(--color-dark)] group-hover:text-[var(--color-primary)] transition-colors duration-300">
+              {t('recommendations.accordion6.title')}
+            </h3>
+            <svg class="accordion-icon w-6 h-6 text-gray-400 group-hover:text-[var(--color-primary)] transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          <div id="accordion-7" class="accordion-content hidden">
+            <div class="px-8 pb-6">
+              <ul class="space-y-3">
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion6.storage_tip1')}</span>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion6.storage_tip2')}</span>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion6.storage_tip3')}</span>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion6.storage_tip4')}</span>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion6.storage_tip5')}</span>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion6.storage_tip6')}</span>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion6.storage_tip7')}</span>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                  <span class="text-gray-700">{t('recommendations.accordion6.storage_tip8')}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. Cómo preparar y empacar artículos para su almacenamiento -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <button 
+            class="accordion-button w-full px-8 py-6 text-left flex items-center justify-between hover:bg-orange-50 transition-all duration-300 group"
+            onclick="toggleAccordion('accordion-8')"
+          >
+            <h3 class="text-xl font-bold text-[var(--color-dark)] group-hover:text-[var(--color-primary)] transition-colors duration-300">
+              {t('recommendations.accordion7.title')}
+            </h3>
+            <svg class="accordion-icon w-6 h-6 text-gray-400 group-hover:text-[var(--color-primary)] transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          <div id="accordion-8" class="accordion-content hidden">
+            <div class="px-8 pb-6">
+              <!-- Sub-acordeones -->
+              <div class="space-y-2">
+                
+                <!-- Sub-acordeón 1: Empacar y etiquetar correctamente -->
+                <div class="bg-gray-50 rounded-xl overflow-hidden">
+                  <button 
+                    class="accordion-button w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-100 transition-all duration-300 group"
+                    onclick="toggleAccordion('sub-accordion-1')"
+                  >
+                    <h4 class="text-lg font-semibold text-[var(--color-dark)] group-hover:text-[var(--color-primary)] transition-colors duration-300">
+                      {t('recommendations.sub1.title')}
+                    </h4>
+                    <svg class="accordion-icon w-5 h-5 text-gray-400 group-hover:text-[var(--color-primary)] transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </button>
+                  <div id="sub-accordion-1" class="accordion-content hidden">
+                    <div class="px-6 pb-4">
+                      <ul class="space-y-2">
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub1.tip1')}</span>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub1.tip2')}</span>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub1.tip3')}</span>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub1.tip4')}</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Sub-acordeón 2: Almacenamiento seguro para refrigeradores -->
+                <div class="bg-gray-50 rounded-xl overflow-hidden">
+                  <button 
+                    class="accordion-button w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-100 transition-all duration-300 group"
+                    onclick="toggleAccordion('sub-accordion-2')"
+                  >
+                    <h4 class="text-lg font-semibold text-[var(--color-dark)] group-hover:text-[var(--color-primary)] transition-colors duration-300">
+                      {t('recommendations.sub2.title')}
+                    </h4>
+                    <svg class="accordion-icon w-5 h-5 text-gray-400 group-hover:text-[var(--color-primary)] transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </button>
+                  <div id="sub-accordion-2" class="accordion-content hidden">
+                    <div class="px-6 pb-4">
+                      <ul class="space-y-2">
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub2.tip1')}</span>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub2.tip2')}</span>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub2.tip3')}</span>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub2.tip4')}</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Sub-acordeón 3: Almacenamiento de televisores de pantalla plana -->
+                <div class="bg-gray-50 rounded-xl overflow-hidden">
+                  <button 
+                    class="accordion-button w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-100 transition-all duration-300 group"
+                    onclick="toggleAccordion('sub-accordion-3')"
+                  >
+                    <h4 class="text-lg font-semibold text-[var(--color-dark)] group-hover:text-[var(--color-primary)] transition-colors duration-300">
+                      {t('recommendations.sub3.title')}
+                    </h4>
+                    <svg class="accordion-icon w-5 h-5 text-gray-400 group-hover:text-[var(--color-primary)] transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </button>
+                  <div id="sub-accordion-3" class="accordion-content hidden">
+                    <div class="px-6 pb-4">
+                      <ul class="space-y-2">
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub3.tip1')}</span>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub3.tip2')}</span>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub3.tip3')}</span>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub3.tip4')}</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Sub-acordeón 4: Guardar objetos de valor afectivo -->
+                <div class="bg-gray-50 rounded-xl overflow-hidden">
+                  <button 
+                    class="accordion-button w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-100 transition-all duration-300 group"
+                    onclick="toggleAccordion('sub-accordion-4')"
+                  >
+                    <h4 class="text-lg font-semibold text-[var(--color-dark)] group-hover:text-[var(--color-primary)] transition-colors duration-300">
+                      {t('recommendations.sub4.title')}
+                    </h4>
+                    <svg class="accordion-icon w-5 h-5 text-gray-400 group-hover:text-[var(--color-primary)] transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </button>
+                  <div id="sub-accordion-4" class="accordion-content hidden">
+                    <div class="px-6 pb-4">
+                      <ul class="space-y-2">
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub4.tip1')}</span>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub4.tip2')}</span>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                          <span class="text-[var(--color-primary)] font-bold mt-1">•</span>
+                          <span class="text-gray-700">{t('recommendations.sub4.tip3')}</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+</section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    (window as any).toggleAccordion = function(accordionId: string) {
+      const content = document.getElementById(accordionId);
+      const button = content?.previousElementSibling;
+      const icon = button?.querySelector('.accordion-icon');
+      
+      if (content && button && icon) {
+        const isHidden = content.classList.contains('hidden');
+        
+        // Determinar si es un acordeón principal o sub-acordeón
+        const isMainAccordion = accordionId.startsWith('accordion-');
+        const isSubAccordion = accordionId.startsWith('sub-accordion-');
+        
+        if (isMainAccordion) {
+          // Para acordeones principales, cerrar solo otros acordeones principales
+          document.querySelectorAll('[id^="accordion-"].accordion-content').forEach(el => {
+            if (el !== content && el.id.startsWith('accordion-')) {
+              el.classList.add('hidden');
+              const otherButton = el.previousElementSibling;
+              const otherIcon = otherButton?.querySelector('.accordion-icon');
+              if (otherIcon && otherIcon instanceof HTMLElement) {
+                otherIcon.style.transform = 'rotate(0deg)';
+              }
+            }
+          });
+        } else if (isSubAccordion) {
+          // Para sub-acordeones, cerrar solo otros sub-acordeones del mismo grupo
+          const parentAccordion = content.closest('[id^="accordion-"]');
+          if (parentAccordion) {
+            parentAccordion.querySelectorAll('[id^="sub-accordion-"].accordion-content').forEach(el => {
+              if (el !== content) {
+                el.classList.add('hidden');
+                const otherButton = el.previousElementSibling;
+                const otherIcon = otherButton?.querySelector('.accordion-icon');
+                if (otherIcon && otherIcon instanceof HTMLElement) {
+                  otherIcon.style.transform = 'rotate(0deg)';
+                }
+              }
+            });
+          }
+        }
+        
+        // Alternar el acordeón actual
+        if (isHidden) {
+          content.classList.remove('hidden');
+          if (icon instanceof HTMLElement) {
+            icon.style.transform = 'rotate(180deg)';
+          }
+        } else {
+          content.classList.add('hidden');
+          if (icon instanceof HTMLElement) {
+            icon.style.transform = 'rotate(0deg)';
+          }
+        }
+      }
+    };
+  });
+</script>
+
+<style>
+  .accordion-content {
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .accordion-icon {
+    transition: transform 0.3s ease-in-out;
+  }
+</style>

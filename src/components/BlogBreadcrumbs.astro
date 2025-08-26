@@ -1,0 +1,87 @@
+---
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+interface Props {
+  category?: string;
+  articleTitle?: string;
+}
+
+const { category, articleTitle } = Astro.props;
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const breadcrumbs = [
+  {
+    name: t('nav.home'),
+    url: lang === 'en' ? '/en' : '/',
+    current: false
+  },
+  {
+    name: t('nav.blog'),
+    url: lang === 'en' ? '/en/blog' : '/blog',
+    current: !articleTitle
+  }
+];
+
+if (articleTitle) {
+  breadcrumbs.push({
+    name: articleTitle,
+    url: '',
+    current: true
+  });
+}
+---
+
+<nav aria-label="Breadcrumb" class="bg-gray-50 py-3">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between">
+      <ol class="flex items-center space-x-2 text-sm">
+        {breadcrumbs.map((crumb, index) => (
+          <li class="flex items-center">
+            {index > 0 && (
+              <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            )}
+            {crumb.current ? (
+              <span class="text-gray-700 font-medium" aria-current="page">
+                {crumb.name}
+              </span>
+            ) : (
+              <a 
+                href={crumb.url} 
+                class="text-[var(--color-primary)] hover:text-[var(--color-primary)]/80 transition-colors duration-200"
+              >
+                {crumb.name}
+              </a>
+            )}
+          </li>
+        ))}
+      </ol>
+      
+      {articleTitle && (
+        <a 
+          href="/blog"
+          class="inline-flex items-center text-[var(--color-primary)] font-medium hover:text-[var(--color-primary)]/80 transition-colors duration-200 text-sm"
+        >
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+          Volver al blog
+        </a>
+      )}
+    </div>
+  </div>
+</nav>
+
+<!-- Schema.org BreadcrumbList -->
+<script type="application/ld+json" set:html={JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": breadcrumbs.map((crumb, index) => ({
+    "@type": "ListItem",
+    "position": index + 1,
+    "name": crumb.name,
+    "item": crumb.url ? `https://almacenajes-minidepositos.com${crumb.url}` : undefined
+  }))
+})} />

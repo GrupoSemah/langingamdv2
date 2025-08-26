@@ -1,0 +1,163 @@
+---
+// Global bfcache optimization component
+// Handles cleanup of third-party resources that interfere with back/forward cache
+---
+
+<script>
+  // Global bfcache optimization manager
+  class BfcacheOptimizer {
+    private static instance: BfcacheOptimizer;
+    private observers: IntersectionObserver[] = [];
+    private timers: number[] = [];
+    private eventListeners: Array<{ element: EventTarget; event: string; handler: EventListener }> = [];
+    
+    static getInstance(): BfcacheOptimizer {
+      if (!BfcacheOptimizer.instance) {
+        BfcacheOptimizer.instance = new BfcacheOptimizer();
+      }
+      return BfcacheOptimizer.instance;
+    }
+    
+    // Register resources for cleanup
+    registerObserver(observer: IntersectionObserver): void {
+      this.observers.push(observer);
+    }
+    
+    registerTimer(timerId: number): void {
+      this.timers.push(timerId);
+    }
+    
+    registerEventListener(element: EventTarget, event: string, handler: EventListener): void {
+      this.eventListeners.push({ element, event, handler });
+      element.addEventListener(event, handler);
+    }
+    
+    // Cleanup all registered resources
+    cleanup(): void {
+      // Disconnect all observers
+      this.observers.forEach(observer => {
+        try {
+          observer.disconnect();
+        } catch (e) {
+          console.warn('Error disconnecting observer:', e);
+        }
+      });
+      this.observers = [];
+      
+      // Clear all timers
+      this.timers.forEach(timerId => {
+        try {
+          clearTimeout(timerId);
+          clearInterval(timerId);
+        } catch (e) {
+          console.warn('Error clearing timer:', e);
+        }
+      });
+      this.timers = [];
+      
+      // Remove all event listeners
+      this.eventListeners.forEach(({ element, event, handler }) => {
+        try {
+          element.removeEventListener(event, handler);
+        } catch (e) {
+          console.warn('Error removing event listener:', e);
+        }
+      });
+      this.eventListeners = [];
+      
+      // Clean up third-party scripts and iframes
+      this.cleanupThirdPartyResources();
+    }
+    
+    private cleanupThirdPartyResources(): void {
+      try {
+        // Remove Pipedrive scripts
+        const pipedriveScripts = document.querySelectorAll('script[src*="pipedrive"]');
+        pipedriveScripts.forEach(script => script.remove());
+        
+        // Remove Google reCAPTCHA scripts and frames
+        const recaptchaScripts = document.querySelectorAll('script[src*="recaptcha"], script[src*="gstatic"]');
+        recaptchaScripts.forEach(script => script.remove());
+        
+        // Remove Google frames
+        const googleFrames = document.querySelectorAll('iframe[src*="google.com"]');
+        googleFrames.forEach(frame => frame.remove());
+        
+        // Clear any Google global variables
+        if (typeof window !== 'undefined') {
+          const windowAny = window as any;
+          delete windowAny.grecaptcha;
+          delete windowAny.___grecaptcha_cfg;
+          delete windowAny.google;
+        }
+        
+        // Force garbage collection if available
+        if ('gc' in window && typeof (window as any).gc === 'function') {
+          (window as any).gc();
+        }
+        
+      } catch (e) {
+        console.warn('Error cleaning up third-party resources:', e);
+      }
+    }
+    
+    // Initialize bfcache optimization
+    init(): void {
+      // Listen for page visibility changes
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          this.cleanup();
+        }
+      });
+      
+      // Listen for page unload events
+      window.addEventListener('pagehide', () => {
+        this.cleanup();
+      });
+      
+      window.addEventListener('beforeunload', () => {
+        this.cleanup();
+      });
+      
+      // Listen for navigation events (for SPAs)
+      window.addEventListener('popstate', () => {
+        this.cleanup();
+      });
+      
+      // Cleanup on page freeze (mobile browsers)
+      document.addEventListener('freeze', () => {
+        this.cleanup();
+      });
+      
+      // Expose global cleanup function
+      (window as any).bfcacheCleanup = () => this.cleanup();
+    }
+  }
+  
+  // Initialize the bfcache optimizer
+  document.addEventListener('DOMContentLoaded', () => {
+    const optimizer = BfcacheOptimizer.getInstance();
+    optimizer.init();
+    
+    // Make it globally available
+    (window as any).BfcacheOptimizer = BfcacheOptimizer;
+  });
+  
+  // Immediate cleanup on script load
+  const optimizer = BfcacheOptimizer.getInstance();
+  optimizer.init();
+</script>
+
+<style>
+  /* Hide any potential flash of third-party content during cleanup */
+  iframe[src*="google.com"]:not([data-bfcache-safe]),
+  iframe[src*="recaptcha"]:not([data-bfcache-safe]) {
+    transition: opacity 0.2s ease-out;
+  }
+  
+  .bfcache-cleaning iframe[src*="google.com"],
+  .bfcache-cleaning iframe[src*="recaptcha"] {
+    opacity: 0;
+    pointer-events: none;
+  }
+</style>

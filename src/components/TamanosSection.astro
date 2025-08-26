@@ -1,0 +1,79 @@
+---
+// Sección de Tamaños de Mini Depósitos
+import StorageCarousel from './StorageCarousel.astro';
+import TamanosPricingCards from './TamanosPricingCards.astro';
+import AnimatedCTAButton from './AnimatedCTAButton.astro';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<section id="tamanos" class="py-16 lg:py-12 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Título y descripción -->
+    <div class="text-center mb-16">
+      <h2 class="text-2xl lg:text-3xl xl:text-4xl font-bold text-[var(--color-dark)] mb-6 leading-tight">
+        {t('sizes.title')}
+      </h2>
+      <p class="text-lg lg:text-xl text-gray-600 max-w-4xl mx-auto text-left lg:text-center">
+        {t('sizes.description')}
+      </p>
+      <!-- Botón CTA -->
+    <div class="text-center my-6">
+        <AnimatedCTAButton 
+          text={t('sizes.cta')} 
+          href="#cotizacion"
+        />
+      </div>
+    </div>
+    
+    <!-- Metraje con flip animation -->
+    <!-- <div class="text-center mb-8">
+      <div class="inline-block perspective-1000">
+        <div id="size-display-main" class="text-4xl lg:text-5xl font-black text-[var(--color-primary)] flip-container">
+          24m²
+        </div>
+      </div>
+    </div> -->
+    
+    <!-- Carousel de tamaños -->
+    <!-- <div class="mb-12">
+      <StorageCarousel />
+    </div> -->
+    
+    <!-- Componente de pricing cards -->
+    <div class="mb-12">
+      <TamanosPricingCards />
+    </div>
+    
+    
+  </div>
+</section>
+
+<style>
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  
+  .flip-container {
+    transform-style: preserve-3d;
+    transition: transform 0.6s ease-in-out;
+  }
+  
+  .flip-up {
+    animation: flipUp 0.6s ease-in-out;
+  }
+  
+  @keyframes flipUp {
+    0% {
+      transform: rotateX(0deg);
+    }
+    50% {
+      transform: rotateX(-90deg);
+    }
+    100% {
+      transform: rotateX(0deg);
+    }
+  }
+</style>

@@ -1,0 +1,383 @@
+---
+// Carousel dinámico para tamaños de mini depósitos
+import storageSizes from '../data/storageSizes.json';
+---
+
+<div class="storage-carousel-container relative">
+  <!-- Carousel de imágenes -->
+  <div class="relative flex items-center justify-center h-96 overflow-hidden px-8">
+    <!-- Imagen izquierda (blur + B&N) - Oculta en mobile -->
+    <div class="hidden md:block absolute left-8 w-1/4 h-80 opacity-90 transition-all duration-700 cubic-bezier(0.23, 1, 0.32, 1) transform">
+      <img id="left-image" 
+        src="/Images/carousel/3metros.webp" 
+        alt="Storage izquierda" 
+        class="w-full h-full object-cover filter blur-sm grayscale rounded-lg transition-all duration-700 cubic-bezier(0.23, 1, 0.32, 1)"
+        width="300" height="320" loading="lazy">
+    </div>
+    
+    <!-- Imagen central (colorida y enfocada) - Centrada en mobile -->
+    <div class="relative z-10 w-full md:w-1/3 h-full mx-auto md:mx-8 transition-all duration-700 cubic-bezier(0.23, 1, 0.32, 1)">
+      <img id="center-image" 
+        src="/Images/carousel/24metros.webp" 
+        alt="Storage central" 
+        class="w-full h-full object-cover rounded-lg transition-all duration-700 cubic-bezier(0.23, 1, 0.32, 1) transform hover:scale-90 cursor-pointer"
+        width="400" height="400" loading="lazy">
+    </div>
+    
+    <!-- Imagen derecha (blur + B&N) - Oculta en mobile -->
+    <div class="hidden md:block absolute right-8 w-1/4 h-80 opacity-90 transition-all duration-700 cubic-bezier(0.23, 1, 0.32, 1) transform">
+      <img id="right-image" 
+        src="/Images/carousel/20metros.webp" 
+        alt="Storage derecha" 
+        class="w-full h-full object-cover filter blur-xs grayscale rounded-lg transition-all duration-700 cubic-bezier(0.23, 1, 0.32, 1)"
+        width="300" height="320" loading="lazy">
+    </div>
+  </div>
+  
+  <!-- Controles del carousel -->
+  <div class="flex justify-center items-center space-x-8 mt-6">
+    <!-- Botón anterior -->
+    <button 
+      id="prev-btn" 
+      class="carousel-btn w-12 h-12 bg-[var(--color-primary)] rounded-full flex items-center justify-center border-2 border-transparent hover:bg-white hover:border-[var(--color-primary)] transition-all duration-300"
+      aria-label="Tamaño anterior de minidepósito"
+    >
+      <svg class="w-6 h-6 text-white hover-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    
+    <!-- Botón siguiente -->
+    <button 
+      id="next-btn" 
+      class="carousel-btn w-12 h-12 bg-[var(--color-primary)] rounded-full flex items-center justify-center border-2 border-transparent hover:bg-white hover:border-[var(--color-primary)] transition-all duration-300"
+      aria-label="Siguiente tamaño de minidepósito"
+    >
+      <svg class="w-6 h-6 text-white hover-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<style>
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  
+  .flip-container {
+    transform-style: preserve-3d;
+    transition: transform 0.6s ease-in-out;
+  }
+  
+  .flip-up {
+    animation: flipUp 0.6s ease-in-out;
+  }
+  
+  @keyframes flipUp {
+    0% {
+      transform: rotateX(0deg);
+    }
+    50% {
+      transform: rotateX(-90deg);
+    }
+    100% {
+      transform: rotateX(0deg);
+    }
+  }
+  
+  .storage-carousel-container {
+    user-select: none;
+  }
+  
+  /* Animaciones de movimiento para el carousel - versión profesional */
+  .carousel-move-left {
+    animation: moveLeftPro 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  
+  .carousel-move-right {
+    animation: moveRightPro 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  
+  .carousel-move-center {
+    animation: moveCenterPro 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  
+  @keyframes moveLeftPro {
+    0% {
+      transform: translateX(0) scale(1) rotateY(0deg);
+      opacity: 1;
+    }
+    25% {
+      transform: translateX(-20px) scale(0.98) rotateY(-2deg);
+      opacity: 0.9;
+    }
+    75% {
+      transform: translateX(-10px) scale(1.01) rotateY(1deg);
+      opacity: 0.95;
+    }
+    100% {
+      transform: translateX(0) scale(1) rotateY(0deg);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes moveRightPro {
+    0% {
+      transform: translateX(0) scale(1) rotateY(0deg);
+      opacity: 1;
+    }
+    25% {
+      transform: translateX(20px) scale(0.98) rotateY(2deg);
+      opacity: 0.9;
+    }
+    75% {
+      transform: translateX(10px) scale(1.01) rotateY(-1deg);
+      opacity: 0.95;
+    }
+    100% {
+      transform: translateX(0) scale(1) rotateY(0deg);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes moveCenterPro {
+    0% {
+      transform: translateX(0) scale(1) translateZ(0);
+      filter: brightness(1);
+    }
+    20% {
+      transform: translateX(0) scale(1.03) translateZ(10px);
+      filter: brightness(1.05);
+    }
+    60% {
+      transform: translateX(0) scale(1.01) translateZ(5px);
+      filter: brightness(1.02);
+    }
+    100% {
+      transform: translateX(0) scale(1) translateZ(0);
+      filter: brightness(1);
+    }
+  }
+  
+  /* Efecto hover mejorado para imagen central - sin drop shadow */
+  #center-image:hover {
+    transform: scale(1.05);
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  
+  /* Efectos de botones */
+  .carousel-btn {
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  
+  .carousel-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 20px rgba(239, 123, 52, 0.4);
+  }
+  
+  .carousel-btn:hover .hover-arrow {
+    color: #222222;
+  }
+  
+  .carousel-btn:active {
+    transform: scale(0.95);
+  }
+  
+  /* Estilo para botones deshabilitados */
+  .carousel-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .carousel-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+    background-color: var(--color-primary);
+  }
+  
+  .carousel-btn:disabled .hover-arrow {
+    color: white;
+  }
+</style>
+
+<script>
+  // Datos de los tamaños
+  const storageSizes = [
+    { id: 1, size: "24m²", image: "/Images/carousel/24metros.webp" },
+    { id: 2, size: "20m²", image: "/Images/carousel/20metros.webp" },
+    { id: 3, size: "18m²", image: "/Images/carousel/18metros.webp" },
+    { id: 4, size: "15m²", image: "/Images/carousel/15metros.webp" },
+    { id: 5, size: "12m²", image: "/Images/carousel/12metros.webp" },
+    { id: 6, size: "9m²", image: "/Images/carousel/9metros.webp" },
+    { id: 7, size: "6m²", image: "/Images/carousel/6metros.webp" },
+    { id: 8, size: "4m²", image: "/Images/carousel/4metros.webp" },
+    { id: 9, size: "3m²", image: "/Images/carousel/3metros.webp" }
+  ];
+  
+  let currentIndex = 0;
+  
+  // Elementos del DOM
+  const leftImage = document.getElementById('left-image') as HTMLImageElement;
+  const centerImage = document.getElementById('center-image') as HTMLImageElement;
+  const rightImage = document.getElementById('right-image') as HTMLImageElement;
+  const sizeDisplay = document.getElementById('size-display-main') as HTMLElement;
+  const prevBtn = document.getElementById('prev-btn') as HTMLButtonElement;
+  const nextBtn = document.getElementById('next-btn') as HTMLButtonElement;
+  
+  // Función para obtener índices (no infinito)
+  function getIndices(current: number) {
+    const total = storageSizes.length;
+    return {
+      left: current > 0 ? current - 1 : 0,
+      center: current,
+      right: current < total - 1 ? current + 1 : total - 1
+    };
+  }
+  
+  // Función para actualizar estado de botones
+  function updateButtonStates() {
+    if (prevBtn) {
+      prevBtn.disabled = currentIndex === 0;
+    }
+    if (nextBtn) {
+      nextBtn.disabled = currentIndex === storageSizes.length - 1;
+    }
+  }
+  
+  // Función para actualizar el carousel
+  function updateCarousel(newIndex: number, direction: 'next' | 'prev' = 'next') {
+    const indices = getIndices(newIndex);
+    
+    // Agregar animaciones de movimiento
+    if (leftImage) {
+      leftImage.classList.add('carousel-move-left');
+      setTimeout(() => {
+        leftImage.src = storageSizes[indices.left].image;
+        setTimeout(() => leftImage.classList.remove('carousel-move-left'), 300);
+      }, 150);
+    }
+    
+    if (centerImage) {
+      centerImage.classList.add('carousel-move-center');
+      setTimeout(() => {
+        centerImage.src = storageSizes[indices.center].image;
+        setTimeout(() => centerImage.classList.remove('carousel-move-center'), 300);
+      }, 150);
+    }
+    
+    if (rightImage) {
+      rightImage.classList.add('carousel-move-right');
+      setTimeout(() => {
+        rightImage.src = storageSizes[indices.right].image;
+        setTimeout(() => rightImage.classList.remove('carousel-move-right'), 300);
+      }, 150);
+    }
+    
+    // Flip animation para el metraje
+    if (sizeDisplay) {
+      sizeDisplay.classList.add('flip-up');
+      setTimeout(() => {
+        if (sizeDisplay) {
+          sizeDisplay.textContent = storageSizes[indices.center].size;
+          sizeDisplay.classList.remove('flip-up');
+        }
+      }, 300);
+    }
+    
+    currentIndex = newIndex;
+    updateButtonStates();
+  }
+  
+  // Event listeners
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (currentIndex > 0) {
+        const newIndex = currentIndex - 1;
+        updateCarousel(newIndex, 'prev');
+      }
+    });
+  }
+  
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      if (currentIndex < storageSizes.length - 1) {
+        const newIndex = currentIndex + 1;
+        updateCarousel(newIndex, 'next');
+      }
+    });
+  }
+  
+  // Inicializar estado de botones
+  updateButtonStates();
+  
+  // Touch/Swipe functionality para mobile
+  let touchStartX = 0;
+  let touchEndX = 0;
+  let isTouching = false;
+  
+  function handleTouchStart(e: TouchEvent) {
+    touchStartX = e.changedTouches[0].screenX;
+    isTouching = true;
+  }
+  
+  function handleTouchEnd(e: TouchEvent) {
+    if (!isTouching) return;
+    
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+    isTouching = false;
+  }
+  
+  function handleSwipe() {
+    const swipeThreshold = 50; // Mínimo de píxeles para considerar un swipe
+    const swipeDistance = touchStartX - touchEndX;
+    
+    if (Math.abs(swipeDistance) > swipeThreshold) {
+      if (swipeDistance > 0) {
+        // Swipe left - siguiente
+        if (currentIndex < storageSizes.length - 1) {
+          const newIndex = currentIndex + 1;
+          updateCarousel(newIndex, 'next');
+        }
+      } else {
+        // Swipe right - anterior
+        if (currentIndex > 0) {
+          const newIndex = currentIndex - 1;
+          updateCarousel(newIndex, 'prev');
+        }
+      }
+    }
+  }
+  
+  // Agregar event listeners para touch solo en mobile
+  function isMobile() {
+    return window.innerWidth <= 768;
+  }
+  
+  if (isMobile() && centerImage) {
+    centerImage.addEventListener('touchstart', handleTouchStart, { passive: true });
+    centerImage.addEventListener('touchend', handleTouchEnd, { passive: true });
+  }
+  
+  // Actualizar touch listeners en resize
+  window.addEventListener('resize', () => {
+    if (centerImage) {
+      if (isMobile()) {
+        centerImage.addEventListener('touchstart', handleTouchStart, { passive: true });
+        centerImage.addEventListener('touchend', handleTouchEnd, { passive: true });
+      } else {
+        centerImage.removeEventListener('touchstart', handleTouchStart);
+        centerImage.removeEventListener('touchend', handleTouchEnd);
+      }
+    }
+  });
+  
+  // Auto-play opcional (comentado por ahora)
+  // setInterval(() => {
+  //   const newIndex = (currentIndex + 1) % storageSizes.length;
+  //   updateCarousel(newIndex);
+  // }, 4000);
+</script>

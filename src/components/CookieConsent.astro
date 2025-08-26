@@ -1,0 +1,108 @@
+---
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<!-- Cookie Consent Banner -->
+<div id="cookie-consent" class="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[var(--color-primary)] shadow-lg z-50 p-4 transform translate-y-full transition-transform duration-300 ease-in-out">
+  <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex-1">
+      <h3 class="font-semibold text-[var(--color-dark)] mb-1">
+        {lang === 'es' ? 'Uso de Cookies' : 'Cookie Usage'}
+      </h3>
+      <p class="text-sm text-gray-600">
+        {lang === 'es' 
+          ? 'Utilizamos cookies esenciales para el funcionamiento del sitio y servicios de terceros (Mapbox, Pipedrive, Google) para mejorar tu experiencia. Estas cookies pueden ser restringidas en el futuro.'
+          : 'We use essential cookies for site functionality and third-party services (Mapbox, Pipedrive, Google) to enhance your experience. These cookies may be restricted in the future.'
+        }
+      </p>
+    </div>
+    <div class="flex gap-3">
+      <button 
+        id="cookie-accept" 
+        class="bg-[var(--color-primary)] text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium">
+        {lang === 'es' ? 'Aceptar' : 'Accept'}
+      </button>
+      <button 
+        id="cookie-decline" 
+        class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+        {lang === 'es' ? 'Solo Esenciales' : 'Essential Only'}
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Cookie consent management
+  document.addEventListener('DOMContentLoaded', () => {
+    const cookieConsent = document.getElementById('cookie-consent');
+    const acceptBtn = document.getElementById('cookie-accept');
+    const declineBtn = document.getElementById('cookie-decline');
+    
+    // Check if user has already made a choice
+    const consentChoice = localStorage.getItem('cookie-consent');
+    
+    if (!consentChoice) {
+      // Show banner after 2 seconds
+      setTimeout(() => {
+        cookieConsent?.classList.remove('translate-y-full');
+      }, 2000);
+    }
+    
+    // Accept all cookies
+    acceptBtn?.addEventListener('click', () => {
+      localStorage.setItem('cookie-consent', 'accepted');
+      hideBanner();
+      // Enable all third-party services
+      enableThirdPartyServices();
+    });
+    
+    // Decline non-essential cookies
+    declineBtn?.addEventListener('click', () => {
+      localStorage.setItem('cookie-consent', 'essential-only');
+      hideBanner();
+      // Disable non-essential third-party services
+      disableNonEssentialServices();
+    });
+    
+    function hideBanner() {
+      cookieConsent?.classList.add('translate-y-full');
+    }
+    
+    function enableThirdPartyServices() {
+      // Mark that third-party services are allowed
+      (window as any).thirdPartyServicesEnabled = true;
+    }
+    
+    function disableNonEssentialServices() {
+      // Mark that only essential services are allowed
+      (window as any).thirdPartyServicesEnabled = false;
+      
+      // Clear existing third-party cookies where possible
+      try {
+        // Clear Google cookies
+        document.cookie.split(";").forEach(function(c) { 
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
+      } catch (e) {
+        console.log('Cookie clearing limited by browser security');
+      }
+    }
+    
+    // If user previously accepted, enable services
+    if (consentChoice === 'accepted') {
+      enableThirdPartyServices();
+    } else if (consentChoice === 'essential-only') {
+      disableNonEssentialServices();
+    }
+  });
+</script>
+
+<style>
+  #cookie-consent {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+  }
+</style>

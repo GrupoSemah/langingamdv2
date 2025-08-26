@@ -1,0 +1,125 @@
+[
+  {
+    "id": 1,
+    "name": "Vista Hermosa",
+    "coordinates": {
+      "lat": 9.008489,
+      "lng": -79.517154
+    },
+    "address": "Vía Brasil, Vista Hermosa",
+    "phone": "+507 224-1111",
+    "hours": "Lun - Vie: 8:00 AM - 5:00 PM | Sáb: 8:00 AM - 12:00 PM"
+  },
+  {
+    "id": 2,
+    "name": "Río Abajo",
+    "coordinates": {
+      "lat": 9.011983,
+      "lng": -79.505159
+    },
+    "address": "Río Abajo, Ciudad de Panamá",
+    "phone": "+507 224-1111",
+    "hours": "Lun - Vie: 8:00 AM - 5:00 PM | Sáb: 8:00 AM - 12:00 PM"
+  },
+  {
+    "id": 3,
+    "name": "Albrook",
+    "coordinates": {
+      "lat": 8.977954470879457,
+      "lng": -79.54206820266764
+    },
+    "address": "Albrook, Ciudad de Panamá",
+    "phone": "+507 224-1111",
+    "hours": "Lun - Vie: 8:00 AM - 5:00 PM | Sáb: 8:00 AM - 12:00 PM"
+  },
+  {
+    "id": 4,
+    "name": "San Antonio",
+    "coordinates": {
+      "lat": 9.052281,
+      "lng": -79.441074
+    },
+    "address": "San Antonio, Ciudad de Panamá",
+    "phone": "+507 224-1111",
+    "hours": "Lun - Vie: 8:00 AM - 5:00 PM | Sáb: 8:00 AM - 12:00 PM"
+  },
+  {
+    "id": 5,
+    "name": "Milla 8",
+    "coordinates": {
+      "lat": 9.070433,
+      "lng": -79.519117
+    },
+    "address": "Milla 8, Ciudad de Panamá",
+    "phone": "+507 224-1111",
+    "hours": "Lun - Vie: 8:00 AM - 5:00 PM | Sáb: 8:00 AM - 12:00 PM"
+  },
+  {
+    "id": 6,
+    "name": "Costa del Este",
+    "coordinates": {
+      "lat": 9.012047,
+      "lng": -79.481566
+    },
+    "address": "Costa del Este, Ciudad de Panamá",
+    "phone": "+507 224-1111",
+    "hours": "Lun - Vie: 8:00 AM - 5:00 PM | Sáb: 8:00 AM - 12:00 PM"
+  },
+  {
+    "id": 7,
+    "name": "Colón",
+    "coordinates": {
+      "lat": 9.320469,
+      "lng": -79.877278
+    },
+    "address": "Colón, Panamá",
+    "phone": "+507 224-1111",
+    "hours": "Lun - Vie: 8:00 AM - 5:00 PM | Sáb: 8:00 AM - 12:00 PM"
+  },
+  {
+    "id": 8,
+    "name": "Gorgona",
+    "coordinates": {
+      "lat": 8.565278,
+      "lng": -79.888909
+    },
+    "address": "Gorgona, Panamá Oeste",
+    "phone": "+507 224-1111",
+    "hours": "Lun - Vie: 8:00 AM - 5:00 PM | Sáb: 8:00 AM - 12:00 PM"
+  },
+  {
+    "id": 9,
+    "name": "Chiriquí",
+    "coordinates": {
+      "lat": 8.436599,
+      "lng": -82.468821
+    },
+    "address": "David, Chiriquí",
+    "phone": "+507 224-1111",
+    "hours": "Lun - Vie: 8:00 AM - 5:00 PM | Sáb: 8:00 AM - 12:00 PM"
+  },
+  {
+    "id": 10,
+    "name": "Hato Montaña",
+    "coordinates": {
+      "lat": 8.918053145705896,
+      "lng": -79.74000851696468
+    },
+    "address": "Hato Montaña, Ciudad de Panamá",
+    "phone": "+507 224-1111",
+    "hours": "Lun - Vie: 8:00 AM - 5:00 PM | Sáb: 8:00 AM - 12:00 PM"
+  },
+  {
+    "id": 11,
+    "name": "Tumba Muerto",
+    "coordinates": {
+      "lat": 9.013019103766732,
+      "lng": -79.53455644907517
+      
+      
+    },
+    "address": "Tumba Muerto, Ciudad de Panamá",
+    "phone": "+507 224-1111",
+    "hours": "Lun - Vie: 8:00 AM - 5:00 PM | Sáb: 8:00 AM - 12:00 PM"
+  }
+]

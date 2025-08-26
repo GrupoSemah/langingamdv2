@@ -1,0 +1,32 @@
+{
+  "name": "amdlanding2",
+  "type": "module",
+  "author": "RV Solutions +",
+  "email": "rvargas@rv-solutions.net",
+  "license": "MIT",
+  "description": "Landing Page Almacenajes MiniDepositos",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/react": "^4.3.0",
+    "@astrojs/sitemap": "^3.4.1",
+    "@tailwindcss/typography": "^0.5.16",
+    "@tailwindcss/vite": "^4.1.11",
+    "@types/marked": "^5.0.2",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "astro": "^5.12.3",
+    "marked": "^16.2.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tailwindcss": "^4.1.11"
+  },
+  "devDependencies": {
+    "astro-compress": "^2.3.8"
+  }
+}

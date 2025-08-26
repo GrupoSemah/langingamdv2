@@ -1,0 +1,546 @@
+---
+// Componente de mapa interactivo Mapbox para sucursales
+import sucursalesData from '../data/sucursales.json';
+// Usar token de test en desarrollo, producción en build
+const MAPBOX_TOKEN = import.meta.env.MAPBOX_TOKEN_TEST || import.meta.env.MAPBOX_TOKEN;
+---
+
+<div class="relative">
+  <!-- Mapa Container -->
+  <div id="map-container" class="w-full h-96 lg:h-[500px] rounded-2xl overflow-hidden bg-gray-200 relative shadow-xl">
+    <!-- Mapa placeholder mientras carga Mapbox -->
+    <div id="map-placeholder" class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-orange-50">
+      <div class="text-center">
+        <div class="animate-pulse w-12 h-12 bg-[var(--color-primary)] rounded-full mx-auto mb-4 flex items-center justify-center">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </div>
+        <p class="text-gray-700 font-medium">Cargando mapa 3D interactivo...</p>
+      </div>
+    </div>
+    
+    <!-- Mapa Mapbox -->
+    <div id="mapbox-map" class="w-full h-full opacity-0 transition-opacity duration-700"></div>
+  </div>
+</div>
+
+<!-- Mapbox GL CSS - Lazy loaded for better performance -->
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+<noscript><link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" /></noscript>
+
+<style>
+  /* Estilos para markers personalizados de Mapbox */
+  .mapbox-marker {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, #d66a2a 100%);
+    border: 4px solid white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 25px rgba(239, 123, 52, 0.4), 0 0 0 0 rgba(239, 123, 52, 0.7);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+    animation: markerPulse 2s infinite;
+  }
+  
+  .mapbox-marker::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border: 2px solid var(--color-primary);
+    border-radius: 50%;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s ease;
+  }
+  
+  .mapbox-marker:hover {
+    transform: scale(1.15) translateY(-2px);
+    box-shadow: 0 12px 35px rgba(239, 123, 52, 0.6), 0 0 0 10px rgba(239, 123, 52, 0.1);
+    animation: none;
+  }
+  
+  .mapbox-marker:hover::before {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  
+  .mapbox-marker.active {
+    background: linear-gradient(135deg, var(--color-dark) 0%, #111111 100%);
+    transform: scale(1.3) translateY(-3px);
+    box-shadow: 0 15px 40px rgba(34, 34, 34, 0.5), 0 0 0 15px rgba(239, 123, 52, 0.2);
+    animation: activeMarkerPulse 1.5s infinite;
+  }
+  
+  .mapbox-marker.active::before {
+    border-color: var(--color-dark);
+    opacity: 1;
+    transform: scale(1.4);
+  }
+  
+  .marker-icon {
+    width: 24px;
+    height: 24px;
+    fill: white;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  }
+  
+  /* Animaciones */
+  @keyframes markerPulse {
+    0% {
+      box-shadow: 0 8px 25px rgba(239, 123, 52, 0.4), 0 0 0 0 rgba(239, 123, 52, 0.7);
+    }
+    70% {
+      box-shadow: 0 8px 25px rgba(239, 123, 52, 0.4), 0 0 0 10px rgba(239, 123, 52, 0);
+    }
+    100% {
+      box-shadow: 0 8px 25px rgba(239, 123, 52, 0.4), 0 0 0 0 rgba(239, 123, 52, 0);
+    }
+  }
+  
+  @keyframes activeMarkerPulse {
+    0% {
+      box-shadow: 0 15px 40px rgba(34, 34, 34, 0.5), 0 0 0 15px rgba(239, 123, 52, 0.2);
+    }
+    70% {
+      box-shadow: 0 15px 40px rgba(34, 34, 34, 0.5), 0 0 0 25px rgba(239, 123, 52, 0);
+    }
+    100% {
+      box-shadow: 0 15px 40px rgba(34, 34, 34, 0.5), 0 0 0 15px rgba(239, 123, 52, 0.2);
+    }
+  }
+  
+  /* Popup personalizado */
+  .mapboxgl-popup {
+    max-width: 300px;
+  }
+  
+  .mapboxgl-popup-content {
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  }
+  
+  .custom-popup {
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+  }
+  
+  .popup-title {
+    font-weight: bold;
+    color: var(--color-dark);
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+  
+  .popup-address {
+    color: #6B7280;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  
+  .popup-phone {
+    color: var(--color-primary);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  /* Estilos para markers súper visibles */
+  .mapbox-marker-simple {
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 100;
+  }
+  
+  .location-icon {
+    width: 50px;
+    height: 50px;
+    filter: 
+      drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5))
+      drop-shadow(0 0 0 3px white)
+      drop-shadow(0 0 0 5px var(--color-primary))
+      drop-shadow(0 0 10px rgba(239, 123, 52, 0.6));
+    transition: all 0.3s ease;
+  }
+  
+  /* Estados hover y activo */
+  .mapbox-marker-simple:hover {
+    transform: scale(1.4);
+    z-index: 101;
+  }
+  
+  .mapbox-marker-simple:hover .location-icon {
+    filter: 
+      drop-shadow(0 8px 16px rgba(239, 123, 52, 0.7))
+      drop-shadow(0 0 0 4px white)
+      drop-shadow(0 0 0 6px var(--color-primary))
+      drop-shadow(0 0 15px rgba(239, 123, 52, 0.8))
+      brightness(1.2);
+  }
+  
+  .mapbox-marker-simple.active .location-icon {
+    filter: 
+      drop-shadow(0 8px 16px rgba(239, 123, 52, 0.9))
+      drop-shadow(0 0 0 4px white)
+      drop-shadow(0 0 0 6px #d66a2a)
+      drop-shadow(0 0 20px rgba(239, 123, 52, 1))
+      hue-rotate(20deg) saturate(1.5) brightness(1.3);
+    transform: scale(1.3);
+    animation: pulse 1.5s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1.3);
+      filter: 
+        drop-shadow(0 8px 16px rgba(239, 123, 52, 0.9))
+        drop-shadow(0 0 0 4px white)
+        drop-shadow(0 0 0 6px #d66a2a)
+        drop-shadow(0 0 20px rgba(239, 123, 52, 1))
+        hue-rotate(20deg) saturate(1.5) brightness(1.3);
+    }
+    50% {
+      transform: scale(1.4);
+      filter: 
+        drop-shadow(0 10px 20px rgba(239, 123, 52, 1))
+        drop-shadow(0 0 0 5px white)
+        drop-shadow(0 0 0 7px #d66a2a)
+        drop-shadow(0 0 25px rgba(239, 123, 52, 1))
+        hue-rotate(25deg) saturate(1.7) brightness(1.5);
+    }
+  }
+  
+
+  
+  /* Estilos para popups simples */
+  .custom-popup-simple .mapboxgl-popup-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    padding: 16px;
+    border: none;
+    font-family: inherit;
+  }
+  
+  .custom-popup-simple .mapboxgl-popup-tip {
+    border-top-color: white;
+  }
+  
+  .popup-content-simple {
+    text-align: left;
+  }
+  
+  .popup-title {
+    color: var(--color-primary);
+    font-weight: 700;
+    font-size: 16px;
+    margin: 0 0 8px 0;
+  }
+  
+  .popup-address {
+    color: #374151;
+    font-size: 14px;
+    margin: 4px 0;
+    font-weight: 500;
+  }
+  
+  .popup-phone {
+    color: var(--color-primary);
+    font-size: 14px;
+    margin: 4px 0;
+    font-weight: 600;
+  }
+  
+  .popup-hours {
+    color: #6B7280;
+    font-size: 12px;
+    margin: 8px 0 0 0;
+    font-style: italic;
+  }
+</style>
+
+<script define:vars={{ sucursalesData, MAPBOX_TOKEN }} is:inline>
+  let map;
+  let markers = [];
+  let activeMarkerIndex = null;
+  
+  // Configuración del mapa con estilo claro y sin edificios 3D
+  const mapConfig = {
+    container: 'mapbox-map',
+    style: 'mapbox://styles/mapbox/streets-v12', // Estilo claro y limpio
+    center: [-79.5199, 9.0579], // Centro de Panamá
+    zoom: 11.5,
+    pitch: 0, // Vista plana sin 3D
+    bearing: 0, // Sin rotación para mejor legibilidad
+    antialias: true // Suavizado para mejor calidad
+  };
+  
+  // Función para inicializar el mapa Mapbox
+  function initMapbox() {
+    const placeholder = document.getElementById('map-placeholder');
+    const mapElement = document.getElementById('mapbox-map');
+    
+    if (!mapElement) {
+      return;
+    }
+    
+    if (!MAPBOX_TOKEN) {
+      // Mostrar mensaje de error en el placeholder
+      if (placeholder) {
+        placeholder.innerHTML = `
+          <div class="text-center">
+            <div class="w-12 h-12 bg-red-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+              </svg>
+            </div>
+            <p class="text-red-600 font-medium">Error: Token de Mapbox no encontrado</p>
+            <p class="text-sm text-gray-500">Verifica MAPBOX_TOKEN_TEST en .env</p>
+          </div>
+        `;
+      }
+      return;
+    }
+    
+    // Configurar token de Mapbox
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+    
+    // Crear el mapa
+    map = new mapboxgl.Map(mapConfig);
+    
+    // Cuando el mapa esté cargado
+    map.on('load', () => {
+      
+      // Ocultar placeholder y mostrar mapa
+      setTimeout(() => {
+        if (placeholder) placeholder.style.display = 'none';
+        mapElement.style.opacity = '1';
+      }, 500);
+      
+      // Crear markers para cada sucursal
+      createMapboxMarkers();
+      
+      // Seleccionar primera sucursal por defecto
+      if (sucursalesData.length > 0) {
+        selectSucursal(0);
+      }
+      
+      // Función global para seleccionar desde la lista (después de que el mapa esté listo)
+      window.selectSucursalFromMap = function(index) {
+        selectSucursal(index);
+      };
+    });
+    
+    // Manejar errores del mapa
+    map.on('error', (e) => {
+        if (placeholder) {
+        placeholder.innerHTML = `
+          <div class="text-center">
+            <div class="w-12 h-12 bg-red-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+              </svg>
+            </div>
+            <p class="text-red-600 font-medium">Error cargando mapa</p>
+            <p class="text-sm text-gray-500">${e.error.message}</p>
+          </div>
+        `;
+      }
+    });
+    
+    // Agregar controles de navegación 3D
+    map.addControl(new mapboxgl.NavigationControl({
+      visualizePitch: true,
+      showZoom: true,
+      showCompass: true
+    }), 'top-right');
+    
+    // Agregar control de pantalla completa
+    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+    
+
+  }
+  
+  // Función para crear markers 3D súper cool con logo de Almacenajes
+  function createMapboxMarkers() {
+    sucursalesData.forEach((sucursal, index) => {
+      // Crear elemento del marker simple
+      const markerElement = document.createElement('div');
+      markerElement.className = 'mapbox-marker-simple';
+      markerElement.setAttribute('data-index', index);
+      
+      // Agregar locationicon simple al marker
+      markerElement.innerHTML = `
+        <img src="/icons/locationicon.svg" alt="Sucursal ${sucursal.name}" class="location-icon" / loading="lazy">
+      `;
+      
+      // Crear popup simple y limpio
+      const popup = new mapboxgl.Popup({
+        offset: [0, -40],
+        closeButton: false,
+        className: 'custom-popup-simple',
+        maxWidth: '280px'
+      }).setHTML(`
+        <div class="popup-content-simple">
+          <h3 class="popup-title">${sucursal.name}</h3>
+          <p class="popup-address">${sucursal.address}</p>
+          <p class="popup-phone">${sucursal.phone}</p>
+          <p class="popup-hours">${sucursal.hours}</p>
+        </div>
+      `);
+      
+      // Crear marker y agregarlo al mapa
+      const marker = new mapboxgl.Marker({
+        element: markerElement,
+        anchor: 'bottom'
+      })
+        .setLngLat([sucursal.coordinates.lng, sucursal.coordinates.lat])
+        .setPopup(popup)
+        .addTo(map);
+        
+      
+      
+      // Guardar referencia del marker
+      markers.push(marker);
+      
+      // Evento click en marker con animación
+      markerElement.addEventListener('click', () => {
+        // Animación de click
+        markerElement.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+          markerElement.style.transform = 'scale(1)';
+        }, 150);
+        selectSucursal(index);
+      });
+      
+      // Efectos hover
+      markerElement.addEventListener('mouseenter', () => {
+        markerElement.classList.add('marker-hover');
+      });
+      
+      markerElement.addEventListener('mouseleave', () => {
+        markerElement.classList.remove('marker-hover');
+      });
+    });
+  }
+  
+  // Función para seleccionar sucursal
+  function selectSucursal(index) {
+    const sucursal = sucursalesData[index];
+    if (!sucursal || !map) return;
+    
+    // Actualizar markers activos
+    markers.forEach((marker, i) => {
+      const element = marker.getElement();
+      if (i === index) {
+        element.classList.add('active');
+      } else {
+        element.classList.remove('active');
+      }
+    });
+    
+    // Cerrar todos los popups primero
+    markers.forEach((marker) => {
+      if (marker.getPopup().isOpen()) {
+        marker.getPopup().remove();
+      }
+    });
+    
+    // Mostrar popup de la sucursal seleccionada
+    markers[index].getPopup().addTo(map);
+    activeMarkerIndex = index;
+    
+    // Volar suavemente al marker seleccionado
+    map.easeTo({
+      center: [sucursal.coordinates.lng, sucursal.coordinates.lat],
+      zoom: 16,
+      pitch: 0, // Vista plana para mejor visibilidad
+      bearing: 0, // Sin rotación para mejor visibilidad
+      duration: 1500,
+      essential: true
+    });
+    
+    // Disparar evento personalizado para actualizar la UI
+    window.dispatchEvent(new CustomEvent('sucursalSelected', {
+      detail: { sucursal, index }
+    }));
+    
+    
+  }
+  
+
+  
+  // Cargar Mapbox GL JS
+  function loadMapbox() {
+    
+    
+    if (typeof mapboxgl !== 'undefined') {
+      
+      initMapbox();
+      return;
+    }
+    
+    
+    const script = document.createElement('script');
+    script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js';
+    script.onload = () => {
+      
+      initMapbox();
+    };
+    script.onerror = (error) => {
+      
+      const placeholder = document.getElementById('map-placeholder');
+      if (placeholder) {
+        placeholder.innerHTML = `
+          <div class="text-center">
+            <div class="w-12 h-12 bg-red-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+              </svg>
+            </div>
+            <p class="text-red-600 font-medium">Error cargando Mapbox</p>
+            <p class="text-sm text-gray-500">No se pudo cargar la librería</p>
+          </div>
+        `;
+      }
+    };
+    
+    document.head.appendChild(script);
+  }
+  
+  // Función temporal para la lista hasta que el mapa esté listo
+  window.selectSucursalFromMap = function(index) {
+    
+    // Guardar la selección para cuando el mapa esté listo
+    window.pendingSucursalSelection = index;
+  };
+  
+  // Optimización para bfcache - limpiar recursos al salir de la página
+  function cleanupMapbox() {
+    if (map) {
+      map.remove();
+      map = null;
+    }
+    markers = [];
+    activeMarkerIndex = null;
+  }
+  
+  // Event listeners para bfcache optimization
+  window.addEventListener('pagehide', cleanupMapbox);
+  window.addEventListener('beforeunload', cleanupMapbox);
+  
+  // Inicializar cuando el DOM esté listo
+  document.addEventListener('DOMContentLoaded', loadMapbox);
+</script>

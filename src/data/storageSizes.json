@@ -1,0 +1,56 @@
+[
+  {
+    "id": 1,
+    "size": "24m²",
+    "image": "/Images/carousel/24metros.webp",
+    "description": "Ideal para muebles de casa completa"
+  },
+  {
+    "id": 2,
+    "size": "20m²", 
+    "image": "/Images/carousel/20metros.webp",
+    "description": "Perfecto para habitación completa"
+  },
+  {
+    "id": 3,
+    "size": "18m²",
+    "image": "/Images/carousel/18metros.webp", 
+    "description": "Excelente para oficina pequeña"
+  },
+  {
+    "id": 4,
+    "size": "15m²",
+    "image": "/Images/carousel/15metros.webp",
+    "description": "Ideal para documentos y cajas"
+  },
+  {
+    "id": 5,
+    "size": "12m²",
+    "image": "/Images/carousel/12metros.webp",
+    "description": "Ideal para documentos y cajas"
+  },
+  {
+    "id": 6,
+    "size": "9m²",
+    "image": "/Images/carousel/9metros.webp",
+    "description": "Ideal para documentos y cajas"
+  },
+  {
+    "id": 7,
+    "size": "6m²",
+    "image": "/Images/carousel/6metros.webp",
+    "description": "Ideal para documentos y cajas"
+  },
+  {
+    "id": 8,
+    "size": "4m²",
+    "image": "/Images/carousel/4metros.webp",
+    "description": "Ideal para documentos y cajas"
+  },
+  {
+    "id": 9,
+    "size": "3m²",
+    "image": "/Images/carousel/3metros.webp",
+    "description": "Ideal para documentos y cajas"
+  }
+]

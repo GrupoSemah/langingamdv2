@@ -1,0 +1,295 @@
+{
+  "blog_content_structure": {
+    "description": "Estructura JSON para generación de contenido del blog de Almacenajes Minidepósitos",
+    "target_audience": "Personas que buscan soluciones de almacenamiento en Panamá",
+    "tone": "Profesional, útil, cercano y confiable",
+    "seo_focus": "Keywords relacionadas con almacenamiento, mini depósitos, bodegas, Panamá",
+    "articles": [
+      {
+        "id": 1,
+        "slug": "como-elegir-tamano-perfecto-minideposito",
+        "status": "pending_content",
+        "languages": ["es", "en"],
+        "metadata": {
+          "es": {
+            "title": "Cómo elegir el tamaño perfecto para tu mini depósito",
+            "excerpt": "Guía completa para determinar qué tamaño de mini depósito necesitas según tus pertenencias y presupuesto.",
+            "meta_description": "Aprende cómo elegir el tamaño ideal de mini depósito en Panamá. Guía completa con consejos prácticos para optimizar tu espacio y presupuesto.",
+            "keywords": ["tamaño mini depósito", "elegir bodega", "almacenamiento panamá", "guía tamaños"]
+          },
+          "en": {
+            "title": "How to choose the perfect size for your mini storage unit",
+            "excerpt": "Complete guide to determine what size mini storage unit you need based on your belongings and budget.",
+            "meta_description": "Learn how to choose the ideal mini storage size in Panama. Complete guide with practical tips to optimize your space and budget.",
+            "keywords": ["mini storage size", "choose warehouse", "storage panama", "size guide"]
+          }
+        },
+        "content_requirements": {
+          "word_count": "800-1200 words",
+          "structure": [
+            "Introduction: Por qué es importante elegir el tamaño correcto",
+            "Section 1: Inventario de pertenencias - Cómo hacer una lista",
+            "Section 2: Guía de tamaños disponibles (3x3, 6x6, 9x9, etc.)",
+            "Section 3: Consejos de organización para maximizar espacio",
+            "Section 4: Consideraciones de presupuesto y tiempo de uso",
+            "Section 5: Casos de estudio - Ejemplos reales",
+            "Conclusión: Pasos siguientes y llamada a la acción"
+          ],
+          "include": [
+            "Tabla comparativa de tamaños",
+            "Lista de verificación imprimible",
+            "Consejos visuales con imágenes",
+            "Testimonios de clientes (si disponible)",
+            "Enlaces internos a página de cotización"
+          ]
+        },
+        "category": "Guías",
+        "tags": ["tamaños", "consejos", "almacenamiento"],
+        "estimated_read_time": "5 min",
+        "author": "Almacenajes Minidepósitos",
+        "publish_date": "2024-03-15"
+      },
+      {
+        "id": 2,
+        "slug": "consejos-seguridad-almacenar-documentos-importantes",
+        "status": "pending_content",
+        "languages": ["es", "en"],
+        "metadata": {
+          "es": {
+            "title": "Consejos de seguridad para almacenar documentos importantes",
+            "excerpt": "Aprende las mejores prácticas para proteger tus documentos más valiosos en un mini depósito.",
+            "meta_description": "Protege tus documentos importantes con estos consejos de seguridad para almacenamiento. Guía profesional para mini depósitos en Panamá.",
+            "keywords": ["almacenar documentos", "seguridad documentos", "protección papeles importantes", "mini depósito seguro"]
+          },
+          "en": {
+            "title": "Security tips for storing important documents",
+            "excerpt": "Learn the best practices to protect your most valuable documents in a mini storage unit.",
+            "meta_description": "Protect your important documents with these security tips for storage. Professional guide for mini storage in Panama.",
+            "keywords": ["store documents", "document security", "protect important papers", "secure mini storage"]
+          }
+        },
+        "content_requirements": {
+          "word_count": "600-900 words",
+          "structure": [
+            "Introduction: Importancia de proteger documentos",
+            "Section 1: Tipos de documentos que necesitan almacenamiento especial",
+            "Section 2: Preparación antes del almacenamiento (copias, digitalización)",
+            "Section 3: Materiales de protección recomendados",
+            "Section 4: Condiciones ambientales ideales",
+            "Section 5: Organización y etiquetado seguro",
+            "Conclusión: Lista de verificación final"
+          ],
+          "include": [
+            "Lista de documentos importantes",
+            "Recomendaciones de productos específicos",
+            "Fotos de técnicas de almacenamiento",
+            "Advertencias de qué NO hacer",
+            "Enlaces a recursos adicionales"
+          ]
+        },
+        "category": "Seguridad",
+        "tags": ["documentos", "seguridad", "protección"],
+        "estimated_read_time": "4 min",
+        "author": "Almacenajes Minidepósitos",
+        "publish_date": "2024-03-10"
+      },
+      {
+        "id": 3,
+        "slug": "organizar-mudanza-mini-deposito-temporal",
+        "status": "pending_content",
+        "languages": ["es", "en"],
+        "metadata": {
+          "es": {
+            "title": "Cómo organizar tu mudanza usando un mini depósito temporal",
+            "excerpt": "Estrategias efectivas para hacer tu mudanza más fácil utilizando almacenamiento temporal.",
+            "meta_description": "Haz tu mudanza más fácil con un mini depósito temporal. Estrategias y consejos prácticos para organizar tu traslado en Panamá.",
+            "keywords": ["mudanza con mini depósito", "almacenamiento temporal", "organizar mudanza", "mudanza panamá"]
+          },
+          "en": {
+            "title": "How to organize your move using a temporary mini storage unit",
+            "excerpt": "Effective strategies to make your move easier using temporary storage.",
+            "meta_description": "Make your move easier with a temporary mini storage unit. Practical strategies and tips for organizing your relocation in Panama.",
+            "keywords": ["moving with mini storage", "temporary storage", "organize move", "moving panama"]
+          }
+        },
+        "content_requirements": {
+          "word_count": "900-1300 words",
+          "structure": [
+            "Introduction: Ventajas del almacenamiento temporal en mudanzas",
+            "Section 1: Planificación previa - Timeline de la mudanza",
+            "Section 2: Qué guardar y qué llevar directamente",
+            "Section 3: Técnicas de empaque para almacenamiento temporal",
+            "Section 4: Coordinación con empresa de mudanza",
+            "Section 5: Proceso de desalojo del mini depósito",
+            "Conclusión: Checklist completo"
+          ],
+          "include": [
+            "Timeline visual de mudanza con storage",
+            "Lista de materiales necesarios",
+            "Consejos de empaque específicos",
+            "Recomendaciones de seguros",
+            "Casos de éxito de clientes"
+          ]
+        },
+        "category": "Mudanzas",
+        "tags": ["mudanza", "organización", "temporal"],
+        "estimated_read_time": "6 min",
+        "author": "Almacenajes Minidepósitos",
+        "publish_date": "2024-03-05"
+      },
+      {
+        "id": 4,
+        "slug": "ventajas-minidepositos-vs-bodega-tradicional",
+        "status": "pending_content",
+        "languages": ["es", "en"],
+        "metadata": {
+          "es": {
+            "title": "Ventajas de los mini depósitos vs. bodega tradicional",
+            "excerpt": "Comparación detallada entre mini depósitos modernos y bodegas tradicionales de alquiler.",
+            "meta_description": "Descubre las ventajas de los mini depósitos modernos vs bodegas tradicionales. Comparación completa para tomar la mejor decisión en Panamá.",
+            "keywords": ["mini depósitos vs bodega", "ventajas mini storage", "comparación almacenamiento", "mejor opción panamá"]
+          },
+          "en": {
+            "title": "Advantages of mini storage units vs. traditional warehouse",
+            "excerpt": "Detailed comparison between modern mini storage units and traditional rental warehouses.",
+            "meta_description": "Discover the advantages of modern mini storage units vs traditional warehouses. Complete comparison to make the best decision in Panama.",
+            "keywords": ["mini storage vs warehouse", "mini storage advantages", "storage comparison", "best option panama"]
+          }
+        },
+        "content_requirements": {
+          "word_count": "1000-1400 words",
+          "structure": [
+            "Introduction: Evolución del almacenamiento comercial",
+            "Section 1: Características de mini depósitos modernos",
+            "Section 2: Características de bodegas tradicionales",
+            "Section 3: Comparación de seguridad",
+            "Section 4: Comparación de accesibilidad y horarios",
+            "Section 5: Comparación de costos y flexibilidad",
+            "Section 6: Casos de uso ideales para cada opción",
+            "Conclusión: Cómo decidir qué es mejor para ti"
+          ],
+          "include": [
+            "Tabla comparativa detallada",
+            "Pros y contras visuales",
+            "Calculadora de costos (si posible)",
+            "Testimonios de ambos tipos de usuarios",
+            "Galería de fotos comparativas"
+          ]
+        },
+        "category": "Comparaciones",
+        "tags": ["ventajas", "comparación", "bodega"],
+        "estimated_read_time": "7 min",
+        "author": "Almacenajes Minidepósitos",
+        "publish_date": "2024-02-28"
+      },
+      {
+        "id": 5,
+        "slug": "preparar-objetos-almacenamiento-largo-plazo",
+        "status": "pending_content",
+        "languages": ["es", "en"],
+        "metadata": {
+          "es": {
+            "title": "Cómo preparar tus objetos para almacenamiento a largo plazo",
+            "excerpt": "Técnicas y materiales necesarios para proteger tus pertenencias durante almacenamiento prolongado.",
+            "meta_description": "Aprende a preparar tus objetos para almacenamiento a largo plazo. Técnicas profesionales y materiales recomendados en Panamá.",
+            "keywords": ["almacenamiento largo plazo", "preparar objetos storage", "conservación pertenencias", "técnicas almacenaje"]
+          },
+          "en": {
+            "title": "How to prepare your items for long-term storage",
+            "excerpt": "Techniques and materials needed to protect your belongings during extended storage.",
+            "meta_description": "Learn how to prepare your items for long-term storage. Professional techniques and recommended materials in Panama.",
+            "keywords": ["long-term storage", "prepare items storage", "preserve belongings", "storage techniques"]
+          }
+        },
+        "content_requirements": {
+          "word_count": "1100-1500 words",
+          "structure": [
+            "Introduction: Importancia de la preparación adecuada",
+            "Section 1: Evaluación inicial - Qué se puede y no se puede almacenar",
+            "Section 2: Limpieza y preparación por tipo de objeto",
+            "Section 3: Materiales de embalaje recomendados",
+            "Section 4: Técnicas específicas por categoría (ropa, muebles, electrónicos)",
+            "Section 5: Etiquetado y documentación",
+            "Section 6: Mantenimiento durante el almacenamiento",
+            "Conclusión: Calendario de revisiones"
+          ],
+          "include": [
+            "Guía de materiales con precios aproximados",
+            "Videos instructivos (si posible)",
+            "Checklist por tipo de objeto",
+            "Errores comunes a evitar",
+            "Recursos donde comprar materiales en Panamá"
+          ]
+        },
+        "category": "Conservación",
+        "tags": ["preparación", "largo plazo", "conservación"],
+        "estimated_read_time": "8 min",
+        "author": "Almacenajes Minidepósitos",
+        "publish_date": "2024-02-20"
+      }
+    ]
+  },
+  "content_guidelines": {
+    "brand_voice": {
+      "characteristics": ["Profesional", "Confiable", "Útil", "Cercano", "Experto"],
+      "avoid": ["Lenguaje muy técnico", "Tono agresivo de ventas", "Información desactualizada"],
+      "include_always": [
+        "Datos específicos de Panamá cuando sea relevante",
+        "Llamadas a la acción sutiles",
+        "Enlaces internos al sitio principal",
+        "Contacto/cotización al final"
+      ]
+    },
+    "seo_requirements": {
+      "keyword_density": "1-2% para keyword principal",
+      "internal_links": "2-4 enlaces por artículo",
+      "external_links": "1-2 enlaces de alta autoridad si es necesario",
+      "images": "Alt text optimizado, nombres descriptivos",
+      "meta_data": "Title 50-60 caracteres, description 150-160 caracteres"
+    },
+    "formatting": {
+      "headings": "H1 para título, H2-H4 para subsecciones",
+      "paragraphs": "3-4 líneas máximo",
+      "lists": "Usar bullets y números cuando sea apropiado",
+      "emphasis": "Bold para términos importantes, cursiva para énfasis sutil"
+    }
+  },
+  "delivery_format": {
+    "per_article": {
+      "content_file": "Archivo Markdown (.md) con frontmatter",
+      "images": "Lista de imágenes necesarias con especificaciones",
+      "metadata": "JSON con todos los metadatos SEO",
+      "review_notes": "Comentarios para revisión editorial"
+    },
+    "frontmatter_structure": {
+      "title": "string",
+      "slug": "string",
+      "excerpt": "string (max 160 chars)",
+      "meta_description": "string (150-160 chars)",
+      "keywords": "array of strings",
+      "author": "string",
+      "date": "YYYY-MM-DD",
+      "category": "string",
+      "tags": "array of strings",
+      "read_time": "string",
+      "featured_image": "string (path)",
+      "lang": "es|en"
+    }
+  },
+  "next_steps": {
+    "content_creation": [
+      "Revisar y aprobar esta estructura",
+      "Asignar artículos a redactores",
+      "Crear calendario editorial",
+      "Definir proceso de revisión",
+      "Implementar artículos en el sitio web"
+    ],
+    "technical_implementation": [
+      "Crear páginas individuales de artículos",
+      "Implementar sistema de categorías y tags",
+      "Añadir funcionalidad de búsqueda (opcional)",
+      "Configurar analytics para el blog",
+      "Implementar newsletter (si se desea)"
+    ]
+  }
+}

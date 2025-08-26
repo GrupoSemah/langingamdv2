@@ -1,0 +1,210 @@
+---
+// Sección de Servicios completa con 3 subsecciones
+import BeneficiosCarousel from './BeneficiosCarousel.astro';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<section id="servicios" class="bg-white">
+  
+  <!-- SUBSECCIÓN 1: Soluciones de almacenajes rápido y confiable -->
+  <div class="relative py-16 lg:py-28 mb-32 overflow-hidden">
+    <!-- Fondo watermark centrado detrás de todo -->
+    <div class="absolute inset-0 z-20 flex items-center justify-center">
+      <img src="/Images/amdwatermark.svg" 
+        alt="AMD Watermark" 
+        class="w-auto h-auto max-w-full max-h-full "
+      / loading="lazy">
+    </div>
+    
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <!-- Contenido izquierdo - Texto -->
+        <div class="space-y-6">
+          <h2 class="text-4xl lg:text-5xl xl:text-6xl font-bold text-[var(--color-dark)] leading-tight text-center lg:text-left">
+            {t('services.storage.title')} 
+            <span class="text-[var(--color-primary)]">{t('services.storage.highlight')}</span>
+          </h2>
+          <p class="text-lg lg:text-xl text-gray-600 leading-relaxed">
+            {t('services.storage.description')}
+          </p>
+          <p class="text-xl lg:text-2xl font-bold text-[var(--color-dark)] text-center lg:text-left">
+            {t('services.storage.tagline')}
+          </p>
+        </div>
+        
+        <!-- Contenido derecho - Imágenes centradas en mobile, escalera en desktop -->
+        <div class="relative h-80 sm:h-96 lg:h-[500px]">
+          <!-- Imagen solucions2 - más grande -->
+          <div class="absolute top-4 right-4 sm:top-2 sm:right-2 md:-top-10 md:-right-5 lg:-top-20 lg:-right-20 z-10">
+            <img src="/Images/solucions2.webp" 
+              alt="Instalaciones" 
+              class="w-48 sm:w-52 md:w-56 lg:w-96"
+              width="384" height="256" loading="lazy">
+          </div>
+          <!-- Imagen solucion1 - más pequeña -->
+          <div class="absolute bottom-4 left-4 sm:bottom-2 sm:left-2 md:bottom-0 md:left-8 lg:left-20 lg:-bottom-12 z-20">
+            <img src="/Images/solucion1.webp" 
+              alt="Empleado de Almacenajes" 
+              class="w-40 sm:w-44 md:w-48 lg:w-72 rounded-2xl"
+              width="288" height="192" loading="lazy">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBSECCIÓN 2: Beneficios exclusivos para tu comodidad -->
+  <div class="py-8 lg:py-12 mb-32 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-2xl lg:text-3xl xl:text-4xl font-bold text-[var(--color-dark)] leading-tight">
+          {t('services.benefits.title')} {t('services.benefits.subtitle')}
+        </h2>
+      </div>
+      
+      <div class="grid lg:grid-cols-2 gap-4 lg:gap-52">
+        <!-- Contenido izquierdo - Grid de beneficios con íconos (3 columnas en desktop) -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
+          <!-- Beneficio 1 - Garage (ahora primero) -->
+          <div class="text-center mb-2">
+            <div class="flex items-center justify-center mx-auto mb-1">
+              <img src="/icons/garage.svg" alt="Acceso con tu auto" class="w-16 h-16" width="64" height="64" loading="lazy">
+            </div>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm mb-1">{t('services.benefit2.line1')}</h3>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm">{t('services.benefit2.line2')}</h3>
+          </div>
+          
+          <!-- Beneficio 2 - Sin amarres (ahora segundo) -->
+          <div class="text-center mb-2">
+            <div class="flex items-center justify-center mx-auto mb-1">
+              <img src="/icons/amarres.svg" alt="Sin amarres" class="w-16 h-16" width="64" height="64" loading="lazy">
+            </div>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm mb-1">{t('services.benefit1.line1')}</h3>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm">{t('services.benefit1.line2')}</h3>
+          </div>
+          
+          <!-- Beneficio 3 -->
+          <div class="text-center mb-2">
+            <div class="flex items-center justify-center mx-auto mb-1">
+              <img src="/icons/seguridad.svg" alt="Acceso a tu deposito 365 dias" class="w-16 h-16" / width="64" height="64" loading="lazy">
+            </div>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm mb-1">{t('services.benefit3.line1')}</h3>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm">{t('services.benefit3.line2')}</h3>
+          </div>
+          
+          <!-- Beneficio 4 -->
+          <div class="text-center mb-2">
+            <div class="flex items-center justify-center mx-auto mb-1">
+              <img src="/icons/tamanos.svg" alt="Múltiples tamaños" class="w-16 h-16" / width="64" height="64" loading="lazy">
+            </div>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm mb-1">{t('services.benefit4.line1')}</h3>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm">{t('services.benefit4.line2')}</h3>
+          </div>
+          
+          <!-- Beneficio 5 -->
+          <div class="text-center mb-2">
+            <div class="flex items-center justify-center mx-auto mb-1">
+              <img src="/icons/montacarga.svg" alt="Montacarga gratuita" class="w-16 h-16" / width="64" height="64" loading="lazy">
+            </div>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm mb-1">{t('services.benefit5.line1')}</h3>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm">{t('services.benefit5.line2')}</h3>
+          </div>
+          
+          <!-- Beneficio 6 -->
+          <div class="text-center mb-2">
+            <div class="flex items-center justify-center mx-auto mb-1">
+              <img src="/icons/carretilla.svg" alt="Carretilla gratuita" class="w-16 h-16" / width="64" height="64" loading="lazy">
+            </div>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm mb-1">{t('services.benefit6.line1')}</h3>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm">{t('services.benefit6.line2')}</h3>
+          </div>
+          
+          <!-- Beneficio 7 -->
+          <div class="text-center mb-2">
+            <div class="flex items-center justify-center mx-auto mb-1">
+              <img src="/icons/acceso.svg" alt="Acceso diario" class="w-16 h-16" / width="64" height="64" loading="lazy">
+            </div>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm mb-1">{t('services.benefit7.line1')}</h3>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm">{t('services.benefit7.line2')}</h3>
+          </div>
+          
+          <!-- Beneficio 8 -->
+          <div class="text-center mb-2">
+            <div class="flex items-center justify-center mx-auto mb-1">
+              <img src="/icons/pagos.svg" alt="Pagos seguros" class="w-16 h-16" / width="64" height="64" loading="lazy">
+            </div>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm mb-1">{t('services.benefit8.line1')}</h3>
+            <h3 class="font-bold text-[var(--color-dark)] text-sm">{t('services.benefit8.line2')}</h3>
+          </div>
+        </div>
+        
+        <!-- Contenido derecho - Carousel -->
+        <div>
+          <BeneficiosCarousel />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBSECCIÓN 3: ¿Cómo funciona? -->
+  <div class="py-16 lg:py-24 mb-8 relative overflow-hidden">
+    <!-- Imagen de fondo de depósitos con overlay naranja -->
+    <div class="absolute inset-0 z-0">
+      <img src="/Images/carousel1.webp" 
+        alt="Fondo depósitos" 
+        class="w-full h-full object-cover"
+      / loading="lazy">
+      <div class="absolute inset-0 bg-[var(--color-primary)] opacity-90"></div>
+    </div>
+    
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4">
+          {t('services.howworks.title')}
+        </h2>
+      </div>
+      
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <!-- Paso 1 -->
+        <div class="bg-white rounded-2xl p-4 lg:p-6 text-center">
+          <div class="w-10 h-10 lg:w-12 lg:h-12 bg-[var(--color-primary)] rounded-2xl flex items-center justify-center mx-auto mb-3 lg:mb-4">
+            <img src="/icons/gancho.svg" alt="Gancho" class="w-4 h-4 lg:w-6 lg:h-6" / width="24" height="24" loading="lazy">
+          </div>
+          <h3 class="text-lg lg:text-3xl xl:text-4xl font-black text-[var(--color-dark)] mb-2 lg:mb-3">{t('services.step1.title')}</h3>
+          <p class="text-xs lg:text-base xl:text-lg text-gray-600 leading-relaxed">{t('services.step1.description')}</p>
+        </div>
+        
+        <!-- Paso 2 -->
+        <div class="bg-white rounded-2xl p-4 lg:p-6 text-center">
+          <div class="w-10 h-10 lg:w-12 lg:h-12 bg-[var(--color-primary)] rounded-2xl flex items-center justify-center mx-auto mb-3 lg:mb-4">
+            <img src="/icons/gancho.svg" alt="Gancho" class="w-4 h-4 lg:w-6 lg:h-6" / width="24" height="24" loading="lazy">
+          </div>
+          <h3 class="text-lg lg:text-3xl xl:text-4xl font-black text-[var(--color-dark)] mb-2 lg:mb-3">{t('services.step2.title')}</h3>
+          <p class="text-xs lg:text-base xl:text-lg text-gray-600 leading-relaxed">{t('services.step2.description')}</p>
+        </div>
+        
+        <!-- Paso 3 -->
+        <div class="bg-white rounded-2xl p-4 lg:p-6 text-center">
+          <div class="w-10 h-10 lg:w-12 lg:h-12 bg-[var(--color-primary)] rounded-2xl flex items-center justify-center mx-auto mb-3 lg:mb-4">
+            <img src="/icons/gancho.svg" alt="Gancho" class="w-4 h-4 lg:w-6 lg:h-6" / width="24" height="24" loading="lazy">
+          </div>
+          <h3 class="text-lg lg:text-3xl xl:text-4xl font-black text-[var(--color-dark)] mb-2 lg:mb-3">{t('services.step3.title')}</h3>
+          <p class="text-xs lg:text-base xl:text-lg text-gray-600 leading-relaxed">{t('services.step3.description')}</p>
+        </div>
+        
+        <!-- Paso 4 -->
+        <div class="bg-white rounded-2xl p-4 lg:p-6 text-center">
+          <div class="w-10 h-10 lg:w-12 lg:h-12 bg-[var(--color-primary)] rounded-2xl flex items-center justify-center mx-auto mb-3 lg:mb-4">
+            <img src="/icons/gancho.svg" alt="Gancho" class="w-4 h-4 lg:w-6 lg:h-6" / width="24" height="24" loading="lazy">
+          </div>
+          <h3 class="text-lg lg:text-3xl xl:text-4xl font-black text-[var(--color-dark)] mb-2 lg:mb-3">{t('services.step4.title')}</h3>
+          <p class="text-xs lg:text-base xl:text-lg text-gray-600 leading-relaxed">{t('services.step4.description')}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>

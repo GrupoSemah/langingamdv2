@@ -1,0 +1,42 @@
+
+# Performance headers for static assets
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/Images/*
+  Cache-Control: public, max-age=31536000
+  
+/icons/*
+  Cache-Control: public, max-age=31536000
+
+# Security headers for Lighthouse Best Practices - ENFORCED MODE
+/*
+  # XSS Protection and Content Security Policy (ENFORCED)
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://api.mapbox.com https://webforms.pipedrive.com https://cdn.pdx-2.pipedriveassets.com https://www.google.com https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://www.clarity.ms https://c.clarity.ms; style-src 'self' 'unsafe-inline' https://api.mapbox.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob: https://www.google-analytics.com https://ssl.google-analytics.com https://www.googletagmanager.com https://c.clarity.ms; connect-src 'self' https://api.mapbox.com https://events.mapbox.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.googletagmanager.com https://c.clarity.ms https://o.clarity.ms; frame-src https://webforms.pipedrive.com https://www.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://webforms.pipedrive.com; upgrade-insecure-requests
+  
+  # Cross-Origin Opener Policy for origin isolation
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: same-origin
+  
+  # Frame control policies (multiple layers of protection)
+  X-Frame-Options: DENY
+  
+  # Additional security headers
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  
+  # Permissions Policy (restrictive)
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=(), fullscreen=(self), picture-in-picture=()
+
+# Compression
+*.js
+  Content-Encoding: gzip
+  
+*.css
+  Content-Encoding: gzip
+  
+*.html
+  Content-Encoding: gzip
