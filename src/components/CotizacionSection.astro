@@ -30,120 +30,14 @@ const t = useTranslations(lang);
           {lang === 'en' ? (
             <!-- English Pipedrive Form -->
             <div class="pipedriveWebForms"
-                 data-pd-webforms="https://webforms.pipedrive.com/f/1DXO2arYktm3uaLISiSIT6xDmwJork1W7NRLR9mGZttKuN1Pb2YNsZSgb75d13Xmr"
-                 id="idxgylty-en">
-              <!-- Lazy load Pipedrive script for better bfcache performance -->
-              <script>
-                let pipedriveLoadedEn = false;
-                let pipedriveObserverEn: IntersectionObserver | null = null;
-                
-                // Load Pipedrive form when section is visible
-                function initializePipedriveFormEn() {
-                  if (pipedriveLoadedEn) return;
-                  
-                  pipedriveObserverEn = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                      if (entry.isIntersecting && !pipedriveLoadedEn) {
-                        const script = document.createElement('script');
-                        script.src = 'https://webforms.pipedrive.com/f/loader';
-                        script.async = true;
-                        script.onload = () => { pipedriveLoadedEn = true; };
-                        document.head.appendChild(script);
-                        pipedriveObserverEn?.disconnect();
-                        pipedriveObserverEn = null;
-                      }
-                    });
-                  }, { threshold: 0.1 });
-                  
-                  const formElement = document.getElementById('idxgylty-en');
-                  if (formElement) pipedriveObserverEn.observe(formElement);
-                }
-                
-                // Cleanup function for bfcache optimization
-                function cleanupPipedriveEn() {
-                  if (pipedriveObserverEn) {
-                    pipedriveObserverEn.disconnect();
-                    pipedriveObserverEn = null;
-                  }
-                  // Remove Pipedrive scripts and iframes for bfcache
-                  const pipedriveScripts = document.querySelectorAll('script[src*="pipedrive"]');
-                  pipedriveScripts.forEach(script => script.remove());
-                }
-                
-                // bfcache optimization event listeners
-                window.addEventListener('pagehide', cleanupPipedriveEn);
-                window.addEventListener('beforeunload', cleanupPipedriveEn);
-                
-                document.addEventListener('DOMContentLoaded', initializePipedriveFormEn);
-              </script>
-              <iframe
-                src="https://webforms.pipedrive.com/f/1DXO2arYktm3uaLISiSIT6xDmwJork1W7NRLR9mGZttKuN1Pb2YNsZSgb75d13Xmr?embeded=1&uuid=idxgylty-en"
-                name="https://almacenajes.net/?page_id=5234&preview=true-idxgylty-en"
-                title="Web Forms"
-                style="width: 100%; border: none; height: 596px;"
-                class="rounded-xl"
-                sandbox="allow-forms allow-scripts allow-same-origin allow-top-navigation allow-top-navigation-by-user-activation allow-popups"
-                referrerpolicy="no-referrer-when-downgrade">
-              </iframe>
+                 data-pd-webforms="https://webforms.pipedrive.com/f/1DXO2arYktm3uaLISiSIT6xDmwJork1W7NRLR9mGZttKuN1Pb2YNsZSgb75d13Xmr">
+              <script src="https://webforms.pipedrive.com/f/loader"></script>
             </div>
           ) : (
             <!-- Spanish Pipedrive Form -->
             <div class="pipedriveWebForms"
-                 data-pd-webforms="https://webforms.pipedrive.com/f/30ZjsoyUUNVXItMSgeKPoBkCTPffsPlFQPjz4j5UwN2QDTG2DGlSgsHGoREn47ASD"
-                 id="idxgylty">
-              <!-- Lazy load Pipedrive script for better bfcache performance -->
-              <script>
-                let pipedriveLoaded = false;
-                let pipedriveObserver: IntersectionObserver | null = null;
-                
-                // Load Pipedrive form when section is visible
-                function initializePipedriveForm() {
-                  if (pipedriveLoaded) return;
-                  
-                  pipedriveObserver = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                      if (entry.isIntersecting && !pipedriveLoaded) {
-                        const script = document.createElement('script');
-                        script.src = 'https://webforms.pipedrive.com/f/loader';
-                        script.async = true;
-                        script.onload = () => { pipedriveLoaded = true; };
-                        document.head.appendChild(script);
-                        pipedriveObserver?.disconnect();
-                        pipedriveObserver = null;
-                      }
-                    });
-                  }, { threshold: 0.1 });
-                  
-                  const formElement = document.getElementById('idxgylty');
-                  if (formElement) pipedriveObserver.observe(formElement);
-                }
-                
-                // Cleanup function for bfcache optimization
-                function cleanupPipedrive() {
-                  if (pipedriveObserver) {
-                    pipedriveObserver.disconnect();
-                    pipedriveObserver = null;
-                  }
-                  // Remove Pipedrive scripts and iframes for bfcache
-                  const pipedriveScripts = document.querySelectorAll('script[src*="pipedrive"]');
-                  pipedriveScripts.forEach(script => script.remove());
-                }
-                
-                // bfcache optimization event listeners
-                window.addEventListener('pagehide', cleanupPipedrive);
-                window.addEventListener('beforeunload', cleanupPipedrive);
-                
-                document.addEventListener('DOMContentLoaded', initializePipedriveForm);
-              </script>
-              <iframe
-                src="https://webforms.pipedrive.com/f/30ZjsoyUUNVXItMSgeKPoBkCTPffsPlFQPjz4j5UwN2QDTG2DGlSgsHGoREn47ASD?embeded=1&uuid=idxgylty"
-                name="https://almacenajes.net/?page_id=5234&preview=true-idxgylty"
-                title="Web Forms"
-                style="width: 100%; border: none; height: 100%; min-height: 600px;"
-                class="rounded-xl"
-                sandbox="allow-forms allow-scripts allow-same-origin allow-top-navigation allow-top-navigation-by-user-activation allow-popups"
-                referrerpolicy="no-referrer-when-downgrade">
-              </iframe>
+                 data-pd-webforms="https://webforms.pipedrive.com/f/30ZjsoyUUNVXItMSgeKPoBkCTPffsPlFQPjz4j5UwN2QDTG2DGlSgsHGoREn47ASD">
+              <script src="https://webforms.pipedrive.com/f/loader"></script>
             </div>
           )}
         </div>
