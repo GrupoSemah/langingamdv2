@@ -99,13 +99,18 @@ const {
 		
 		<ClientRouter />
 		
-		<!-- Google tag (gtag.js) -->
+		<!-- Google tag (gtag.js) - GA4 & Google Ads -->
 		<script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-W9FEEJYKVT"></script>
 		<script is:inline>
 			window.dataLayer = window.dataLayer || [];
 			function gtag(){dataLayer.push(arguments);}
 			gtag('js', new Date());
+			
+			// Google Analytics 4
 			gtag('config', 'G-W9FEEJYKVT');
+			
+			// Google Ads Conversion Tracking
+			gtag('config', 'AW-976110472');
 		</script>
 		
 		<!-- Microsoft Clarity (mapa de calor) -->

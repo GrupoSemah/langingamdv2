@@ -1,0 +1,221 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SEO from '../../components/SEO.astro';
+import { canonicalUrls } from '../../config/seo';
+
+const seoData = {
+	title: 'Thank You for Your Quote - Almacenajes Minidepósitos',
+	description: 'Thank you for requesting a quote. We will contact you soon.',
+	keywords: 'thank you, quote, storage, self storage, confirmation',
+	canonical: `${canonicalUrls.en.home}thank-you-quote`,
+	lang: 'en'
+};
+---
+
+<Layout title={seoData.title}>
+	<SEO 
+		title={seoData.title}
+		description={seoData.description}
+		keywords={seoData.keywords}
+		canonical={seoData.canonical}
+		lang={seoData.lang}
+		slot="seo"
+	/>
+	
+	<main class="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-orange-50 relative overflow-hidden">
+		<!-- Confetti Canvas -->
+		<canvas id="confetti-canvas" class="absolute inset-0 pointer-events-none"></canvas>
+		
+		<!-- Content Card -->
+		<div class="relative z-10 max-w-2xl mx-auto px-4 py-12 text-center">
+			<div class="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-orange-100">
+				<!-- Success Icon -->
+				<div class="mb-6 inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full animate-bounce-slow">
+					<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+					</svg>
+				</div>
+				
+				<!-- Title -->
+				<h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
+					Thank You!
+				</h1>
+				
+				<!-- Message -->
+				<p class="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
+					We have received your quote request.<br>
+					Our team will contact you very soon.
+				</p>
+				
+				<!-- Countdown Timer -->
+				<div class="mb-8 text-sm text-gray-500">
+					You will be redirected to home in <span id="countdown" class="font-bold text-orange-600">30</span> seconds
+				</div>
+				
+				<!-- CTA Button -->
+				<a 
+					href="/en"
+					class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-full hover:from-orange-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+				>
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+					</svg>
+					Back to Home
+				</a>
+			</div>
+		</div>
+	</main>
+</Layout>
+
+<style>
+	@keyframes bounce-slow {
+		0%, 100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-10px);
+		}
+	}
+	
+	.animate-bounce-slow {
+		animation: bounce-slow 2s ease-in-out infinite;
+	}
+</style>
+
+<script>
+	// Confetti Animation
+	const canvasEl = document.getElementById('confetti-canvas');
+	if (!canvasEl) throw new Error('Canvas not found');
+	const canvas = canvasEl as HTMLCanvasElement;
+	
+	const ctxTemp = canvas.getContext('2d');
+	if (!ctxTemp) throw new Error('Canvas context not found');
+	const ctx = ctxTemp;
+	
+	// Set canvas size
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
+	
+	// Resize canvas on window resize
+	window.addEventListener('resize', () => {
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+	});
+	
+	// Confetti particle class
+	class Confetti {
+		x: number;
+		y: number;
+		size: number;
+		speedY: number;
+		speedX: number;
+		color: string;
+		rotation: number;
+		rotationSpeed: number;
+		
+		constructor() {
+			this.x = Math.random() * canvas.width;
+			this.y = -10;
+			this.size = Math.random() * 8 + 4;
+			this.speedY = Math.random() * 3 + 2;
+			this.speedX = Math.random() * 2 - 1;
+			this.rotation = Math.random() * 360;
+			this.rotationSpeed = Math.random() * 10 - 5;
+			
+			// Orange theme colors
+			const colors = ['#EF7B34', '#F59E0B', '#F97316', '#FB923C', '#FDBA74', '#FED7AA'];
+			this.color = colors[Math.floor(Math.random() * colors.length)];
+		}
+		
+		update() {
+			this.y += this.speedY;
+			this.x += this.speedX;
+			this.rotation += this.rotationSpeed;
+			
+			// Reset if out of bounds
+			if (this.y > canvas.height) {
+				this.y = -10;
+				this.x = Math.random() * canvas.width;
+			}
+		}
+		
+		draw() {
+			ctx.save();
+			ctx.translate(this.x, this.y);
+			ctx.rotate((this.rotation * Math.PI) / 180);
+			ctx.fillStyle = this.color;
+			ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+			ctx.restore();
+		}
+	}
+	
+	// Create confetti particles
+	const confettiCount = 150;
+	const confettiArray: Confetti[] = [];
+	
+	for (let i = 0; i < confettiCount; i++) {
+		confettiArray.push(new Confetti());
+	}
+	
+	// Animation loop
+	function animate() {
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		
+		confettiArray.forEach(confetti => {
+			confetti.update();
+			confetti.draw();
+		});
+		
+		requestAnimationFrame(animate);
+	}
+	
+	animate();
+	
+	// Countdown and redirect
+	let timeLeft = 30;
+	const countdownElement = document.getElementById('countdown');
+	if (!countdownElement) throw new Error('Countdown element not found');
+	
+	const countdownInterval = setInterval(() => {
+		timeLeft--;
+		countdownElement.textContent = timeLeft.toString();
+		
+		if (timeLeft <= 0) {
+			clearInterval(countdownInterval);
+			window.location.href = '/en';
+		}
+	}, 1000);
+	
+	// Google Ads Conversion Tracking with Referrer Validation
+	declare global {
+		function gtag(...args: any[]): void;
+	}
+	
+	// Validate referrer to prevent fake conversions from direct access
+	function isValidReferrer(): boolean {
+		const referrer = document.referrer;
+		
+		// Allow if coming from own domain
+		if (referrer.includes(window.location.hostname)) {
+			return true;
+		}
+		
+		// Allow if coming from Pipedrive forms
+		if (referrer.includes('webforms.pipedrive.com') || referrer.includes('pipedrive.com')) {
+			return true;
+		}
+		
+		// Block direct access or unknown sources
+		return false;
+	}
+	
+	// Only track conversion if referrer is valid
+	if (typeof gtag !== 'undefined' && isValidReferrer()) {
+		gtag('event', 'conversion', {
+			'send_to': 'AW-976110472/cotizacion_completada'
+		});
+		console.log('✅ Conversion tracked - Valid referrer');
+	} else {
+		console.warn('⚠️ Conversion blocked - Direct access or invalid referrer');
+	}
+</script>
