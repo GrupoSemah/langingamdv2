@@ -15,9 +15,9 @@
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://api.mapbox.com https://webforms.pipedrive.com https://cdn.pdx-2.pipedriveassets.com https://www.google.com https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https://www.clarity.ms https://c.clarity.ms; style-src 'self' 'unsafe-inline' https://api.mapbox.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob: https://www.google-analytics.com https://ssl.google-analytics.com https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://c.clarity.ms; connect-src 'self' https://api.mapbox.com https://events.mapbox.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com/recaptcha/ https://www.recaptcha.net https://c.clarity.ms https://o.clarity.ms; frame-src https://webforms.pipedrive.com https://www.google.com https://www.googletagmanager.com https://www.recaptcha.net https://www.google.com/recaptcha/; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://webforms.pipedrive.com; upgrade-insecure-requests
   
   # Cross-Origin Opener Policy for origin isolation
-  Cross-Origin-Opener-Policy: same-origin
-  Cross-Origin-Embedder-Policy: require-corp
-  Cross-Origin-Resource-Policy: same-origin
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  Cross-Origin-Embedder-Policy: credentialless
+  Cross-Origin-Resource-Policy: cross-origin
   
   # Frame control policies (multiple layers of protection)
   X-Frame-Options: DENY
