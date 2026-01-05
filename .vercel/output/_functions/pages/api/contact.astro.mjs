@@ -20,8 +20,12 @@ function getSucursalEnumId(sucursal) {
   return sucursalMap[sucursal] || 670624;
 }
 async function POST({ request }) {
-  console.log("=== INICIO API CONTACT AMD ===");
+  const headers = { "Content-Type": "application/json" };
   try {
+    console.log("=== INICIO API CONTACT AMD ===");
+    if (!request) {
+      throw new Error("Request object is undefined");
+    }
     console.log("Environment:", {
       isVercel: !!Object.assign(__vite_import_meta_env__, { KOMMO_SUBDOMAIN: "itamosemahcom", KOMMO_ACCESS_TOKEN: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6ImNmMjA2NmU5Njc2NmJjODRlZDFjZDFhOWRlMzMwM2MzODdiOWI1YzU4YThjNDZkZTQyNzRiYzc3MzJmYzk0NGY1OTRhNjJhNTRkMTRmNDdiIn0.eyJhdWQiOiIxMjE1ODRlYi04NjczLTQwYmQtOThhYi03OGRhOGYwODU3MjQiLCJqdGkiOiJjZjIwNjZlOTY3NjZiYzg0ZWQxY2QxYTlkZTMzMDNjMzg3YjliNWM1OGE4YzQ2ZGU0Mjc0YmM3NzMyZmM5NDRmNTk0YTYyYTU0ZDE0ZjQ3YiIsImlhdCI6MTc2NTQ4MTMzMSwibmJmIjoxNzY1NDgxMzMxLCJleHAiOjE4OTMzNjk2MDAsInN1YiI6IjEzNTI3MzYzIiwiZ3JhbnRfdHlwZSI6IiIsImFjY291bnRfaWQiOjM0ODg3MzY3LCJiYXNlX2RvbWFpbiI6ImtvbW1vLmNvbSIsInZlcnNpb24iOjIsInNjb3BlcyI6WyJjcm0iLCJmaWxlcyIsImZpbGVzX2RlbGV0ZSIsIm5vdGlmaWNhdGlvbnMiLCJwdXNoX25vdGlmaWNhdGlvbnMiXSwiaGFzaF91dWlkIjoiMjM2MTI1YTctMDY5My00MjhhLWE5YjMtNzYyOTYwMjI2NWUyIiwidXNlcl9mbGFncyI6MCwiYXBpX2RvbWFpbiI6ImFwaS1jLmtvbW1vLmNvbSJ9.jm7DVfKze_glpy580UQaCym2QSTspxikTUho_kjnd_qlVFPgFif3lWKoiXTt86r9DmmcKoiYEfwrvY_vMrsSth3TRiQ0uWo2BuG5l54OLZksLKADEFrOpp3U_uW7uuQRR_nmdJQiRjjGV_uYDH1fNAxZkyNRBy7EHPAge7IWsreN20KE0q96G6_JNbaG8FIyuMMMa_xc5F_Xth25mquJHcu9tMmLLTZh8DgskcTQkqYSr8XV1h29sQkcY5hlgrRWzRAkXRo5BRoWEQXa5kCJvuqCodpNC23Lm8xDp-08LJwfGaPCDvKjjrXk0HDvNhdhR4-VibVvsvukTfs2tnMvxg", KOMMO_PIPELINE_ID: "11583619", KOMMO_STATUS_ID: "88960711", KOMMO_USER_ID: "13527363", KOMMO_EMAIL_FIELD_ID: "290154", KOMMO_PHONE_FIELD_ID: "290152", KOMMO_SUCURSAL_FIELD_ID: "799870", KOMMO_FUENTE_LEAD_ID: "799856", KOMMO_FUENTE_LEAD_ENUM_ID: "670568", NODE: process.env.NODE, NODE_ENV: process.env.NODE_ENV, OS: process.env.OS, _: process.env._ }).VERCEL,
       nodeEnv: process.env.NODE_ENV,
@@ -31,6 +35,7 @@ async function POST({ request }) {
       "KOMMO_SUBDOMAIN",
       "KOMMO_ACCESS_TOKEN",
       "KOMMO_PIPELINE_ID",
+      "KOMMO_STATUS_ID",
       "KOMMO_USER_ID",
       "KOMMO_EMAIL_FIELD_ID",
       "KOMMO_PHONE_FIELD_ID",
@@ -57,7 +62,7 @@ async function POST({ request }) {
         envStatus
       }), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers
       });
     }
     console.log("Parseando datos del formulario...");
@@ -145,7 +150,7 @@ async function POST({ request }) {
       message: "Lead creado exitosamente en Kommo"
     }), {
       status: 200,
-      headers: { "Content-Type": "application/json" }
+      headers
     });
   } catch (error) {
     console.error("=== ERROR EN API CONTACT AMD ===");
@@ -202,7 +207,7 @@ async function POST({ request }) {
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     }), {
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers
     });
   }
 }

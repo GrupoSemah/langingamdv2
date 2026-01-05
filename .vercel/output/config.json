@@ -24,6 +24,18 @@
 			"dest": "_render"
 		},
 		{
+			"src": "^/blog/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/en/blog/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/sitemap\\.xml/?$",
+			"dest": "_render"
+		},
+		{
 			"src": "^/.*$",
 			"dest": "/404.html",
 			"status": 404
