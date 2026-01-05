@@ -1,0 +1,63 @@
+# Robots.txt optimizado para Almacenajes Mini Depósitos
+# Permite indexación completa para máximo SEO
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://almacenajes-minidepositos.com/sitemap.xml
+
+# Crawl-delay para evitar sobrecarga del servidor
+Crawl-delay: 1
+
+# Permitir acceso a recursos críticos
+Allow: /Images/
+Allow: /fonts/
+Allow: /_astro/
+Allow: /favicon.ico
+Allow: /favicon.svg
+Allow: /apple-touch-icon.png
+Allow: /site.webmanifest
+
+# Bloquear archivos innecesarios para SEO
+Disallow: /api/
+Disallow: /_astro/*.map
+Disallow: /node_modules/
+Disallow: /.git/
+Disallow: /src/
+Disallow: /dist/
+Disallow: /package.json
+Disallow: /package-lock.json
+Disallow: /tsconfig.json
+Disallow: /astro.config.mjs
+
+# Permitir específicamente a bots importantes
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
