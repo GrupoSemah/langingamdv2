@@ -1,6 +1,12 @@
 import axios from 'axios';
+import https from 'https';
 
 export const prerender = false;
+
+// Configurar axios para aceptar certificados auto-firmados
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false
+});
 
 function getSucursalEnumId(sucursal) {
   const sucursalMap = {
@@ -146,6 +152,7 @@ export async function POST({ request }) {
           'Authorization': `Bearer ${import.meta.env.KOMMO_ACCESS_TOKEN}`,
           'Content-Type': 'application/json'
         },
+        httpsAgent: httpsAgent,
         timeout: 10000
       }
     );
