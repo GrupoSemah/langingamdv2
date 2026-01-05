@@ -6,16 +6,20 @@
   "license": "MIT",
   "description": "Landing Page Almacenajes MiniDepositos",
   "version": "1.0.0",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "start": "node ./dist/server/entry.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/node": "^9.5.1",
     "@astrojs/react": "^4.3.0",
     "@astrojs/sitemap": "^3.4.1",
-    "@astrojs/vercel": "^9.0.2",
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.1.11",
     "@types/marked": "^5.0.2",
