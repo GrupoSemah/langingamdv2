@@ -12,3 +12,4 @@ cmd = "node ./dist/server/entry.mjs"
 
 [variables]
 HOST = "0.0.0.0"
+NODE_TLS_REJECT_UNAUTHORIZED = "0"
