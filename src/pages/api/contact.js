@@ -24,7 +24,7 @@ export async function POST({ request }) {
   // Asegurar que siempre devolvemos JSON
   const headers = { 'Content-Type': 'application/json' };
   
-  // Wrapper de seguridad para capturar errores antes de que Vercel los maneje
+  // Wrapper de seguridad para capturar errores
   try {
     console.log('=== INICIO API CONTACT AMD ===');
     
@@ -33,7 +33,6 @@ export async function POST({ request }) {
       throw new Error('Request object is undefined');
     }
     console.log('Environment:', {
-      isVercel: !!import.meta.env.VERCEL,
       nodeEnv: import.meta.env.NODE_ENV,
       platform: typeof process !== 'undefined' ? process.platform : 'unknown'
     });
