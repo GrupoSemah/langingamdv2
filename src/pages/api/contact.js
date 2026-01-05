@@ -24,9 +24,14 @@ export async function POST({ request }) {
   // Asegurar que siempre devolvemos JSON
   const headers = { 'Content-Type': 'application/json' };
   
-  console.log('=== INICIO API CONTACT AMD ===');
-  
+  // Wrapper de seguridad para capturar errores antes de que Vercel los maneje
   try {
+    console.log('=== INICIO API CONTACT AMD ===');
+    
+    // Validación temprana de request
+    if (!request) {
+      throw new Error('Request object is undefined');
+    }
     console.log('Environment:', {
       isVercel: !!import.meta.env.VERCEL,
       nodeEnv: import.meta.env.NODE_ENV,
@@ -37,6 +42,7 @@ export async function POST({ request }) {
       'KOMMO_SUBDOMAIN',
       'KOMMO_ACCESS_TOKEN',
       'KOMMO_PIPELINE_ID',
+      'KOMMO_STATUS_ID',
       'KOMMO_USER_ID',
       'KOMMO_EMAIL_FIELD_ID',
       'KOMMO_PHONE_FIELD_ID',
