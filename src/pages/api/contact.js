@@ -21,6 +21,9 @@ function getSucursalEnumId(sucursal) {
 }
 
 export async function POST({ request }) {
+  // Asegurar que siempre devolvemos JSON
+  const headers = { 'Content-Type': 'application/json' };
+  
   console.log('=== INICIO API CONTACT AMD ===');
   
   try {
@@ -63,7 +66,7 @@ export async function POST({ request }) {
         envStatus: envStatus
       }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers
       });
     }
 
@@ -161,7 +164,7 @@ export async function POST({ request }) {
       message: 'Lead creado exitosamente en Kommo'
     }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers
     });
 
   } catch (error) {
@@ -223,7 +226,7 @@ export async function POST({ request }) {
       timestamp: new Date().toISOString()
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers
     });
   }
 }
