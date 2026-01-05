@@ -1,6 +1,6 @@
 ---
-// Sección de Cotización idéntica al prototipo de Figma
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
+import FormularioKommo from './FormularioKommo.astro';
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -25,21 +25,9 @@ const t = useTranslations(lang);
           </h2>
         </div>
         
-        <!-- Contenido derecho - Formulario de Pipedrive más ancho -->
+        <!-- Contenido derecho - Formulario de Kommo -->
         <div class="bg-white rounded-2xl p-3 sm:p-4 lg:p-5 shadow-lg w-full">
-          {lang === 'en' ? (
-            <!-- English Pipedrive Form -->
-            <div class="pipedriveWebForms"
-                 data-pd-webforms="https://webforms.pipedrive.com/f/1DXO2arYktm3uaLISiSIT6xDmwJork1W7NRLR9mGZttKuN1Pb2YNsZSgb75d13Xmr">
-              <script src="https://webforms.pipedrive.com/f/loader"></script>
-            </div>
-          ) : (
-            <!-- Spanish Pipedrive Form -->
-            <div class="pipedriveWebForms"
-                 data-pd-webforms="https://webforms.pipedrive.com/f/30ZjsoyUUNVXItMSgeKPoBkCTPffsPlFQPjz4j5UwN2QDTG2DGlSgsHGoREn47ASD">
-              <script src="https://webforms.pipedrive.com/f/loader"></script>
-            </div>
-          )}
+          <FormularioKommo />
         </div>
         
       </div>
@@ -48,46 +36,3 @@ const t = useTranslations(lang);
   </div>
 </section>
 
-<style>
-  /* Asegurar que el iframe se vea bien en todos los dispositivos sin scroll interno */
-  .pipedriveWebForms {
-    height: auto;
-    min-height: 600px;
-  }
-  
-  .pipedriveWebForms iframe {
-    border-radius: 0.75rem;
-    overflow: hidden;
-  }
-  
-  /* Responsive adjustments - alturas dinámicas sin scroll interno */
-  @media (max-width: 1024px) {
-    .pipedriveWebForms {
-      min-height: 650px;
-    }
-    
-    .pipedriveWebForms iframe {
-      min-height: 650px;
-    }
-  }
-  
-  @media (max-width: 768px) {
-    .pipedriveWebForms {
-      min-height: 700px;
-    }
-    
-    .pipedriveWebForms iframe {
-      min-height: 700px;
-    }
-  }
-  
-  @media (max-width: 640px) {
-    .pipedriveWebForms {
-      min-height: 750px;
-    }
-    
-    .pipedriveWebForms iframe {
-      min-height: 750px;
-    }
-  }
-</style>
