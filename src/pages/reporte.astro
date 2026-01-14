@@ -1,0 +1,434 @@
+---
+export const prerender = false;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Reporte Kommo - AMD</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      
+      .modal-overlay.hidden {
+        display: none;
+      }
+      
+      .modal {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      
+      .modal h2 {
+        color: #1a1a2e;
+        margin-bottom: 0.5rem;
+        font-size: 1.5rem;
+      }
+      
+      .modal p {
+        color: #666;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+      }
+      
+      .modal input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        transition: border-color 0.2s;
+      }
+      
+      .modal input:focus {
+        outline: none;
+        border-color: #EF7B34;
+      }
+      
+      .modal button {
+        width: 100%;
+        padding: 12px;
+        background: #EF7B34;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      
+      .modal button:hover {
+        background: #d96a2a;
+      }
+      
+      .error-msg {
+        color: #e74c3c;
+        font-size: 0.85rem;
+        margin-top: -0.5rem;
+        margin-bottom: 1rem;
+        display: none;
+      }
+      
+      .error-msg.show {
+        display: block;
+      }
+      
+      .container {
+        background: white;
+        padding: 3rem;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 600px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        display: none;
+      }
+      
+      .container.visible {
+        display: block;
+      }
+      
+      .logo {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      
+      .logo img {
+        max-width: 180px;
+        height: auto;
+      }
+      
+      h1 {
+        color: #1a1a2e;
+        text-align: center;
+        margin-bottom: 0.5rem;
+        font-size: 1.8rem;
+      }
+      
+      .subtitle {
+        color: #666;
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      
+      .info-box {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+      }
+      
+      .info-box h3 {
+        color: #1a1a2e;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .info-box p {
+        color: #666;
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+      
+      .btn-download {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, #EF7B34 0%, #d96a2a 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+      
+      .btn-download:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(239, 123, 52, 0.4);
+      }
+      
+      .btn-download:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+      
+      .btn-download svg {
+        width: 24px;
+        height: 24px;
+      }
+      
+      .status {
+        text-align: center;
+        margin-top: 1.5rem;
+        padding: 1rem;
+        border-radius: 8px;
+        display: none;
+      }
+      
+      .status.loading {
+        display: block;
+        background: #e3f2fd;
+        color: #1976d2;
+      }
+      
+      .status.success {
+        display: block;
+        background: #e8f5e9;
+        color: #388e3c;
+      }
+      
+      .status.error {
+        display: block;
+        background: #ffebee;
+        color: #d32f2f;
+      }
+      
+      .spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #1976d2;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      .btn-fields {
+        width: 100%;
+        padding: 12px;
+        background: transparent;
+        color: #666;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        margin-top: 1rem;
+        transition: all 0.2s;
+      }
+      
+      .btn-fields:hover {
+        border-color: #EF7B34;
+        color: #EF7B34;
+      }
+      
+      .fields-result {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f5f5f5;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;
+      }
+      
+      .fields-result.visible {
+        display: block;
+      }
+      
+      .fields-result pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="modal-overlay" id="authModal">
+      <div class="modal">
+        <h2>Acceso Restringido</h2>
+        <p>Ingresa la clave de acceso para continuar</p>
+        <input type="password" id="secretInput" placeholder="Clave de acceso" autocomplete="off" />
+        <p class="error-msg" id="errorMsg">Clave incorrecta. Intenta de nuevo.</p>
+        <button id="authBtn">Acceder</button>
+      </div>
+    </div>
+
+    <div class="container" id="mainContainer">
+      <div class="logo">
+        <img src="/logo.webp" alt="AMD Logo" onerror="this.style.display='none'" />
+      </div>
+      
+      <h1>Reporte de Leads</h1>
+      <p class="subtitle">Descarga el reporte completo de Kommo</p>
+      
+      <div class="info-box">
+        <h3>Información del reporte</h3>
+        <p>
+          Este reporte incluye todos los leads del embudo de ventas con sus campos personalizados.
+          El archivo se generará con la fecha actual en el nombre.
+        </p>
+      </div>
+      
+      <button class="btn-download" id="downloadBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Descargar Reporte Excel
+      </button>
+      
+      <div class="status" id="status"></div>
+      
+      <button class="btn-fields" id="fieldsBtn">Ver campos disponibles en Kommo</button>
+      <div class="fields-result" id="fieldsResult">
+        <pre id="fieldsContent"></pre>
+      </div>
+    </div>
+
+    <script is:inline>
+      let userSecret = '';
+      
+      const authModal = document.getElementById('authModal');
+      const mainContainer = document.getElementById('mainContainer');
+      const secretInput = document.getElementById('secretInput');
+      const authBtn = document.getElementById('authBtn');
+      const errorMsg = document.getElementById('errorMsg');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const status = document.getElementById('status');
+      const fieldsBtn = document.getElementById('fieldsBtn');
+      const fieldsResult = document.getElementById('fieldsResult');
+      const fieldsContent = document.getElementById('fieldsContent');
+
+      secretInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') authBtn.click();
+      });
+
+      authBtn.addEventListener('click', async () => {
+        const secret = secretInput.value.trim();
+        if (!secret) return;
+        
+        authBtn.disabled = true;
+        authBtn.textContent = 'Verificando...';
+        
+        try {
+          const res = await fetch(`/api/kommo-fields?secret=${encodeURIComponent(secret)}`);
+          if (res.ok) {
+            userSecret = secret;
+            authModal.classList.add('hidden');
+            mainContainer.classList.add('visible');
+          } else {
+            errorMsg.classList.add('show');
+            secretInput.value = '';
+            secretInput.focus();
+          }
+        } catch {
+          errorMsg.classList.add('show');
+        } finally {
+          authBtn.disabled = false;
+          authBtn.textContent = 'Acceder';
+        }
+      });
+
+      downloadBtn.addEventListener('click', async () => {
+        downloadBtn.disabled = true;
+        status.className = 'status loading';
+        status.innerHTML = '<span class="spinner"></span> Generando reporte... Esto puede tomar varios minutos dependiendo de la cantidad de leads.';
+        
+        try {
+          const res = await fetch(`/api/reporte?secret=${encodeURIComponent(userSecret)}`);
+          
+          if (!res.ok) {
+            const error = await res.json();
+            throw new Error(error.error || 'Error desconocido');
+          }
+          
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const today = new Date().toISOString().split('T')[0];
+          a.href = url;
+          a.download = `Reporte Kommo ${today}.xlsx`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          a.remove();
+          
+          status.className = 'status success';
+          status.textContent = 'Reporte descargado exitosamente.';
+        } catch (error) {
+          status.className = 'status error';
+          status.textContent = `Error: ${error.message}`;
+        } finally {
+          downloadBtn.disabled = false;
+        }
+      });
+
+      fieldsBtn.addEventListener('click', async () => {
+        fieldsBtn.disabled = true;
+        fieldsBtn.textContent = 'Cargando...';
+        
+        try {
+          const res = await fetch(`/api/kommo-fields?secret=${encodeURIComponent(userSecret)}`);
+          const data = await res.json();
+          
+          if (data.success) {
+            const formatted = {
+              'Campos de Leads': data.leadFields.map(f => ({ id: f.id, nombre: f.name, tipo: f.type })),
+              'Campos de Contactos': data.contactFields.map(f => ({ id: f.id, nombre: f.name, tipo: f.type })),
+              'Pipelines': data.pipelines.map(p => ({
+                id: p.id,
+                nombre: p.name,
+                statuses: p._embedded?.statuses?.map(s => ({ id: s.id, nombre: s.name }))
+              }))
+            };
+            fieldsContent.textContent = JSON.stringify(formatted, null, 2);
+            fieldsResult.classList.add('visible');
+          } else {
+            fieldsContent.textContent = `Error: ${data.error}`;
+            fieldsResult.classList.add('visible');
+          }
+        } catch (error) {
+          fieldsContent.textContent = `Error: ${error.message}`;
+          fieldsResult.classList.add('visible');
+        } finally {
+          fieldsBtn.disabled = false;
+          fieldsBtn.textContent = 'Ver campos disponibles en Kommo';
+        }
+      });
+    </script>
+  </body>
+</html>
