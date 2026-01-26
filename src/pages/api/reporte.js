@@ -79,7 +79,7 @@ async function fetchContactDetails(kommoSubdomain, accessToken, contactId) {
 }
 
 async function fetchCustomFields(kommoSubdomain, accessToken) {
-  const [leadsRes, contactsRes, pipelinesRes] = await Promise.all([
+  const [leadsRes, contactsRes, pipelinesRes, lossReasonsRes] = await Promise.all([
     axios.get(`https://${kommoSubdomain}.kommo.com/api/v4/leads/custom_fields`, {
       headers: { 'Authorization': `Bearer ${accessToken}` }, httpsAgent, timeout: 15000
     }),
@@ -88,13 +88,17 @@ async function fetchCustomFields(kommoSubdomain, accessToken) {
     }),
     axios.get(`https://${kommoSubdomain}.kommo.com/api/v4/leads/pipelines`, {
       headers: { 'Authorization': `Bearer ${accessToken}` }, httpsAgent, timeout: 15000
-    })
+    }),
+    axios.get(`https://${kommoSubdomain}.kommo.com/api/v4/leads/loss_reasons`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }, httpsAgent, timeout: 15000
+    }).catch(() => ({ data: { _embedded: { loss_reasons: [] } } }))
   ]);
 
   return {
     leadFields: leadsRes.data?._embedded?.custom_fields || [],
     contactFields: contactsRes.data?._embedded?.custom_fields || [],
-    pipelines: pipelinesRes.data?._embedded?.pipelines || []
+    pipelines: pipelinesRes.data?._embedded?.pipelines || [],
+    lossReasons: lossReasonsRes.data?._embedded?.loss_reasons || []
   };
 }
 
@@ -130,6 +134,12 @@ function getStatusName(pipelines, statusId) {
   return '';
 }
 
+function getLossReasonName(lossReasons, lossReasonId) {
+  if (!lossReasonId) return '';
+  const reason = lossReasons.find(r => r.id === lossReasonId);
+  return reason?.name || '';
+}
+
 export async function GET({ request }) {
   const headers = { 'Content-Type': 'application/json' };
 
@@ -144,8 +154,9 @@ export async function GET({ request }) {
     const kommoSubdomain = import.meta.env.KOMMO_SUBDOMAIN;
     const accessToken = import.meta.env.KOMMO_ACCESS_TOKEN;
 
-    console.log('Obteniendo pipelines...');
-    const { pipelines } = await fetchCustomFields(kommoSubdomain, accessToken);
+    console.log('Obteniendo pipelines y loss reasons...');
+    const { pipelines, lossReasons } = await fetchCustomFields(kommoSubdomain, accessToken);
+    console.log('Loss reasons encontradas:', lossReasons.length);
 
     console.log('Obteniendo todos los leads...');
     const leads = await fetchAllLeads(kommoSubdomain, accessToken);
@@ -201,7 +212,7 @@ export async function GET({ request }) {
         'Nombre con el que el lead inbound fue registrado en site link': getCustomFieldValue(cf, LEAD_FIELDS.NOMBRE_COMPLETO) || contactName,
         'Estatus del lead': getCustomFieldValue(cf, LEAD_FIELDS.ESTADO_DEL_LEAD) || statusName,
         'Razones que el lead dio luego de no alquilar': '', // Campo no existe en Kommo
-        'Motivo de la pérdida': getCustomFieldValue(cf, LEAD_FIELDS.QUE_HARA_CON_BIENES),
+        'Motivo de la pérdida': getLossReasonName(lossReasons, lead.loss_reason_id),
         'Estado final': estadoFinal,
         'Fecha de seguimiento': '' // Campo no existe en Kommo
       });
