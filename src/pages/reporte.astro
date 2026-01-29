@@ -256,6 +256,49 @@ export const prerender = false;
         color: #EF7B34;
       }
       
+      .date-filter {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+      
+      .date-filter h3 {
+        color: #1a1a2e;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+      
+      .date-row {
+        display: flex;
+        gap: 1rem;
+      }
+      
+      .date-group {
+        flex: 1;
+      }
+      
+      .date-group label {
+        display: block;
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+      }
+      
+      .date-group input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: border-color 0.2s;
+      }
+      
+      .date-group input:focus {
+        outline: none;
+        border-color: #EF7B34;
+      }
+      
       .fields-result {
         margin-top: 1rem;
         padding: 1rem;
@@ -299,9 +342,23 @@ export const prerender = false;
       <div class="info-box">
         <h3>Información del reporte</h3>
         <p>
-          Este reporte incluye todos los leads del embudo de ventas con sus campos personalizados.
-          El archivo se generará con la fecha actual en el nombre.
+          Este reporte incluye los leads del embudo de ventas filtrados por fecha de creación.
+          Selecciona el rango de fechas para generar el reporte.
         </p>
+      </div>
+      
+      <div class="date-filter">
+        <h3>Filtrar por fecha de creación del lead</h3>
+        <div class="date-row">
+          <div class="date-group">
+            <label for="dateFrom">Desde</label>
+            <input type="date" id="dateFrom" />
+          </div>
+          <div class="date-group">
+            <label for="dateTo">Hasta</label>
+            <input type="date" id="dateTo" />
+          </div>
+        </div>
       </div>
       
       <button class="btn-download" id="downloadBtn">
@@ -332,6 +389,15 @@ export const prerender = false;
       const fieldsBtn = document.getElementById('fieldsBtn');
       const fieldsResult = document.getElementById('fieldsResult');
       const fieldsContent = document.getElementById('fieldsContent');
+      const dateFrom = document.getElementById('dateFrom');
+      const dateTo = document.getElementById('dateTo');
+      
+      // Establecer fechas por defecto (último mes)
+      const today = new Date();
+      const lastMonth = new Date();
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      dateTo.value = today.toISOString().split('T')[0];
+      dateFrom.value = lastMonth.toISOString().split('T')[0];
 
       secretInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') authBtn.click();
@@ -364,12 +430,32 @@ export const prerender = false;
       });
 
       downloadBtn.addEventListener('click', async () => {
+        const fromDate = dateFrom.value;
+        const toDate = dateTo.value;
+        
+        if (!fromDate || !toDate) {
+          status.className = 'status error';
+          status.textContent = 'Por favor selecciona ambas fechas.';
+          return;
+        }
+        
+        if (new Date(fromDate) > new Date(toDate)) {
+          status.className = 'status error';
+          status.textContent = 'La fecha "Desde" no puede ser mayor que "Hasta".';
+          return;
+        }
+        
         downloadBtn.disabled = true;
         status.className = 'status loading';
         status.innerHTML = '<span class="spinner"></span> Generando reporte... Esto puede tomar varios minutos dependiendo de la cantidad de leads.';
         
         try {
-          const res = await fetch(`/api/reporte?secret=${encodeURIComponent(userSecret)}`);
+          const params = new URLSearchParams({
+            secret: userSecret,
+            from: fromDate,
+            to: toDate
+          });
+          const res = await fetch(`/api/reporte?${params.toString()}`);
           
           if (!res.ok) {
             const error = await res.json();

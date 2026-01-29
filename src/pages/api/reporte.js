@@ -35,17 +35,25 @@ function formatTime(timestamp) {
   return date.toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' });
 }
 
-async function fetchAllLeads(kommoSubdomain, accessToken) {
+async function fetchAllLeads(kommoSubdomain, accessToken, fromTimestamp, toTimestamp) {
   let allLeads = [];
   let page = 1;
   const limit = 250;
   let hasMore = true;
 
   while (hasMore) {
+    const params = { 
+      page, 
+      limit, 
+      with: 'contacts',
+      'filter[created_at][from]': fromTimestamp,
+      'filter[created_at][to]': toTimestamp
+    };
+    
     const response = await axios.get(
       `https://${kommoSubdomain}.kommo.com/api/v4/leads`,
       {
-        params: { page, limit, with: 'contacts' },
+        params,
         headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         httpsAgent,
         timeout: 30000
@@ -73,6 +81,33 @@ async function fetchContactDetails(kommoSubdomain, accessToken, contactId) {
       }
     );
     return response.data;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchNextTaskForLead(kommoSubdomain, accessToken, leadId) {
+  try {
+    const response = await axios.get(
+      `https://${kommoSubdomain}.kommo.com/api/v4/tasks`,
+      {
+        params: {
+          'filter[entity_id]': leadId,
+          'filter[entity_type]': 'leads',
+          'filter[is_completed]': 0,
+          'order[complete_till]': 'asc',
+          'limit': 1
+        },
+        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        httpsAgent,
+        timeout: 10000
+      }
+    );
+    const tasks = response.data?._embedded?.tasks || [];
+    if (tasks.length > 0) {
+      return tasks[0].complete_till;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -154,12 +189,26 @@ export async function GET({ request }) {
     const kommoSubdomain = import.meta.env.KOMMO_SUBDOMAIN;
     const accessToken = import.meta.env.KOMMO_ACCESS_TOKEN;
 
+    // Obtener parámetros de fecha
+    const fromDate = url.searchParams.get('from');
+    const toDate = url.searchParams.get('to');
+    
+    if (!fromDate || !toDate) {
+      return new Response(JSON.stringify({ success: false, error: 'Parámetros de fecha requeridos (from, to)' }), { status: 400, headers });
+    }
+    
+    // Convertir fechas a timestamps Unix (inicio del día from, fin del día to)
+    const fromTimestamp = Math.floor(new Date(fromDate + 'T00:00:00').getTime() / 1000);
+    const toTimestamp = Math.floor(new Date(toDate + 'T23:59:59').getTime() / 1000);
+    
+    console.log(`Filtro de fechas: ${fromDate} (${fromTimestamp}) - ${toDate} (${toTimestamp})`);
+
     console.log('Obteniendo pipelines y loss reasons...');
     const { pipelines, lossReasons } = await fetchCustomFields(kommoSubdomain, accessToken);
     console.log('Loss reasons encontradas:', lossReasons.length);
 
-    console.log('Obteniendo todos los leads...');
-    const leads = await fetchAllLeads(kommoSubdomain, accessToken);
+    console.log('Obteniendo leads en el rango de fechas...');
+    const leads = await fetchAllLeads(kommoSubdomain, accessToken, fromTimestamp, toTimestamp);
     console.log(`Total leads: ${leads.length}`);
 
     const rows = [];
@@ -182,6 +231,9 @@ export async function GET({ request }) {
         }
         await new Promise(resolve => setTimeout(resolve, 100));
       }
+
+      const nextTaskDate = await fetchNextTaskForLead(kommoSubdomain, accessToken, lead.id);
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const cf = lead.custom_fields_values || [];
       const statusName = getStatusName(pipelines, lead.status_id);
@@ -214,7 +266,7 @@ export async function GET({ request }) {
         'Razones que el lead dio luego de no alquilar': '', // Campo no existe en Kommo
         'Motivo de la pérdida': getLossReasonName(lossReasons, lead.loss_reason_id),
         'Estado final': estadoFinal,
-        'Fecha de seguimiento': '' // Campo no existe en Kommo
+        'Fecha de seguimiento': nextTaskDate ? formatTimestamp(nextTaskDate) : ''
       });
 
       if ((i + 1) % 50 === 0) console.log(`Procesados ${i + 1}/${leads.length} leads`);
