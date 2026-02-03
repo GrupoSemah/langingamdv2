@@ -20,7 +20,7 @@ function getCustomFieldValue(customFields, fieldId) {
     result = value.value || '';
   }
   // Filtrar valores "none" o similares
-  if (result.toLowerCase() === 'none' || result.toLowerCase() === 'ninguno') {
+  if (typeof result === 'string' && (result.toLowerCase() === 'none' || result.toLowerCase() === 'ninguno')) {
     return '';
   }
   return result;
