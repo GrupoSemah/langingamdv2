@@ -13,26 +13,45 @@ function getCustomFieldValue(customFields, fieldId) {
   const field = customFields.find(f => f.field_id === fieldId);
   if (!field || !field.values || !field.values[0]) return '';
   const value = field.values[0];
-  if (value.enum_id && value.value) return value.value;
-  return value.value || '';
+  let result = '';
+  if (value.enum_id && value.value) {
+    result = value.value;
+  } else {
+    result = value.value || '';
+  }
+  // Filtrar valores "none" o similares
+  if (result.toLowerCase() === 'none' || result.toLowerCase() === 'ninguno') {
+    return '';
+  }
+  return result;
 }
 
 function formatTimestamp(timestamp) {
   if (!timestamp) return '';
   const date = new Date(timestamp * 1000);
-  return date.toLocaleString('es-PA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
 }
 
 function formatDate(timestamp) {
   if (!timestamp) return '';
   const date = new Date(timestamp * 1000);
-  return date.toLocaleDateString('es-PA', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
 }
 
 function formatTime(timestamp) {
   if (!timestamp) return '';
   const date = new Date(timestamp * 1000);
-  return date.toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' });
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
 }
 
 async function fetchAllLeads(kommoSubdomain, accessToken, fromTimestamp, toTimestamp) {
@@ -212,6 +231,10 @@ export async function GET({ request }) {
     const leads = await fetchAllLeads(kommoSubdomain, accessToken, fromTimestamp, toTimestamp);
     console.log(`Total leads: ${leads.length}`);
 
+    // Ordenar leads por fecha de creación (ascendente)
+    leads.sort((a, b) => a.created_at - b.created_at);
+    console.log('Leads ordenados por fecha de creación (ascendente)');
+
     const rows = [];
 
     for (let i = 0; i < leads.length; i++) {
@@ -265,6 +288,7 @@ export async function GET({ request }) {
         'Sucursal Elegida por Cliente': getCustomFieldValue(cf, LEAD_FIELDS.SUCURSAL_ELEGIDA_CLIENTE),
         'Nombre con el que el lead inbound fue registrado en site link': getCustomFieldValue(cf, LEAD_FIELDS.NOMBRE_COMPLETO) || contactName,
         'Estatus del lead': getCustomFieldValue(cf, LEAD_FIELDS.ESTADO_DEL_LEAD) || statusName,
+        '¿Qué hará con sus bienes?': getCustomFieldValue(cf, LEAD_FIELDS.QUE_HARA_CON_BIENES),
         'Razones que el lead dio luego de no alquilar': '', // Campo no existe en Kommo
         'Motivo de la pérdida': getLossReasonName(lossReasons, lead.loss_reason_id),
         'Estado final': estadoFinal,
