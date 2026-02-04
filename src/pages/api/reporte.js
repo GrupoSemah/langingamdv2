@@ -19,9 +19,9 @@ function getCustomFieldValue(customFields, fieldId) {
   } else {
     result = value.value || '';
   }
-  // Filtrar valores "none" o similares
-  if (typeof result === 'string' && (result.toLowerCase() === 'none' || result.toLowerCase() === 'ninguno')) {
-    return '';
+  // Transformar valores "none" o similares a "Desconocido"
+  if (typeof result === 'string' && (result.toLowerCase() === 'none' || result.toLowerCase() === 'ninguno' || result.toLowerCase() === 'razon no definida')) {
+    return 'Desconocido';
   }
   return result;
 }
@@ -171,6 +171,7 @@ const LEAD_FIELDS = {
   SUCURSAL_ELEGIDA_CLIENTE: 799870,
   SUCURSAL_OFRECIDA: 802710,
   ESTADO_DEL_LEAD: 799882,
+  VISITO: 799884,
   NECESITAS: 799888,
   QUE_HARA_CON_BIENES: 801235,
   NOMBRE_COMPLETO: 801237
@@ -191,9 +192,13 @@ function getStatusName(pipelines, statusId) {
 }
 
 function getLossReasonName(lossReasons, lossReasonId) {
-  if (!lossReasonId) return '';
+  if (!lossReasonId) return 'Desconocido';
   const reason = lossReasons.find(r => r.id === lossReasonId);
-  return reason?.name || '';
+  const name = reason?.name || '';
+  if (!name || name.toLowerCase() === 'none' || name.toLowerCase() === 'razon no definida') {
+    return 'Desconocido';
+  }
+  return name;
 }
 
 export async function GET({ request }) {
@@ -292,6 +297,7 @@ export async function GET({ request }) {
         '¿Qué hará con sus bienes?': getCustomFieldValue(cf, LEAD_FIELDS.QUE_HARA_CON_BIENES),
         'Razones que el lead dio luego de no alquilar': '', // Campo no existe en Kommo
         'Motivo de la pérdida': getLossReasonName(lossReasons, lead.loss_reason_id),
+        'Visitó?': getCustomFieldValue(cf, LEAD_FIELDS.VISITO),
         'Estado final': estadoFinal,
         'Fecha de seguimiento': nextTaskDate ? formatTimestamp(nextTaskDate) : ''
       });
