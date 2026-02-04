@@ -295,7 +295,6 @@ export async function GET({ request }) {
         'Nombre con el que el lead inbound fue registrado en site link': getCustomFieldValue(cf, LEAD_FIELDS.NOMBRE_COMPLETO) || contactName,
         'Estatus del lead': getCustomFieldValue(cf, LEAD_FIELDS.ESTADO_DEL_LEAD) || statusName,
         '¿Qué hará con sus bienes?': getCustomFieldValue(cf, LEAD_FIELDS.QUE_HARA_CON_BIENES),
-        'Razones que el lead dio luego de no alquilar': '', // Campo no existe en Kommo
         'Motivo de la pérdida': getLossReasonName(lossReasons, lead.loss_reason_id),
         'Visitó?': getCustomFieldValue(cf, LEAD_FIELDS.VISITO),
         'Estado final': estadoFinal,
