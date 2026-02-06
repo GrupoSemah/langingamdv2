@@ -29,29 +29,35 @@ function getCustomFieldValue(customFields, fieldId) {
 function formatTimestamp(timestamp) {
   if (!timestamp) return '';
   const date = new Date(timestamp * 1000);
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
+  // Usar zona horaria de Panamá (UTC-5)
+  const options = { timeZone: 'America/Panama' };
+  const day = String(date.toLocaleString('en-US', { ...options, day: '2-digit' })).padStart(2, '0');
+  const month = String(date.toLocaleString('en-US', { ...options, month: '2-digit' })).padStart(2, '0');
+  const year = date.toLocaleString('en-US', { ...options, year: 'numeric' });
+  const hours = String(date.toLocaleString('en-US', { ...options, hour: '2-digit', hour12: false })).padStart(2, '0');
+  const minutes = String(date.toLocaleString('en-US', { ...options, minute: '2-digit' })).padStart(2, '0');
+  const seconds = String(date.toLocaleString('en-US', { ...options, second: '2-digit' })).padStart(2, '0');
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 function formatDate(timestamp) {
   if (!timestamp) return '';
   const date = new Date(timestamp * 1000);
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
+  // Usar zona horaria de Panamá (UTC-5)
+  const options = { timeZone: 'America/Panama' };
+  const day = String(date.toLocaleString('en-US', { ...options, day: '2-digit' })).padStart(2, '0');
+  const month = String(date.toLocaleString('en-US', { ...options, month: '2-digit' })).padStart(2, '0');
+  const year = date.toLocaleString('en-US', { ...options, year: 'numeric' });
   return `${year}-${month}-${day}`;
 }
 
 function formatTime(timestamp) {
   if (!timestamp) return '';
   const date = new Date(timestamp * 1000);
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
+  // Usar zona horaria de Panamá (UTC-5)
+  const options = { timeZone: 'America/Panama' };
+  const hours = String(date.toLocaleString('en-US', { ...options, hour: '2-digit', hour12: false })).padStart(2, '0');
+  const minutes = String(date.toLocaleString('en-US', { ...options, minute: '2-digit' })).padStart(2, '0');
   return `${hours}:${minutes}`;
 }
 
