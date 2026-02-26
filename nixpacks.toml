@@ -8,7 +8,7 @@ cmds = ["npm ci"]
 cmds = ["npm run build"]
 
 [start]
-cmd = "echo 'appuser:x:1001:1001::/tmp:/bin/sh' >> /etc/passwd && echo 'appgroup:x:1001:' >> /etc/group && chown -R 1001:1001 /app/dist 2>/dev/null; exec su appuser -s /bin/sh -c 'node ./dist/server/entry.mjs'"
+cmd = "node ./dist/server/entry.mjs"
 
 [variables]
 HOST = "0.0.0.0"
