@@ -1,11 +1,12 @@
 [phases.setup]
 nixPkgs = ["nodejs_20"]
+cmds = ["corepack enable", "corepack prepare pnpm@10.17.1 --activate"]
 
 [phases.install]
-cmds = ["npm ci"]
+cmds = ["pnpm install --frozen-lockfile"]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = ["pnpm run build"]
 
 [start]
 cmd = "node ./dist/server/entry.mjs"
@@ -13,4 +14,6 @@ cmd = "node ./dist/server/entry.mjs"
 [variables]
 HOST = "0.0.0.0"
 PORT = "4321"
+# DEUDA DE SEGURIDAD: NODE_TLS_REJECT_UNAUTHORIZED=0 deshabilita verificación TLS.
+# Eliminar cuando el servidor de Kommo tenga certificado válido configurado.
 NODE_TLS_REJECT_UNAUTHORIZED = "0"

@@ -93,7 +93,7 @@ function parseFrontmatter(content: string): { frontmatter: BlogFrontmatter; cont
   }
 
   const [, frontmatterStr, markdownContent] = match;
-  const frontmatter: Record<string, any> = {};
+  const frontmatter: Record<string, string | number | string[]> = {};
   
   // Parse YAML-like frontmatter
   const lines = frontmatterStr.split('\n');

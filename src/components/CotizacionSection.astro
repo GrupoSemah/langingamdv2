@@ -1,6 +1,7 @@
 ---
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
-import FormularioKommo from './FormularioKommo.astro';
+import CotizacionFormPreview from './CotizacionFormPreview.astro';
+import CotizacionModal from './CotizacionModal.astro';
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -8,31 +9,34 @@ const t = useTranslations(lang);
 
 <section id="cotizacion" class="py-4 sm:py-6 lg:py-8 flex items-center justify-center min-h-screen">
   <div class="max-w-6xl lg:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex items-center justify-center">
-    
+
     <!-- Card naranja centrada con fondo, patrón de dots y rounded-xl -->
     <div class="bg-[var(--color-primary)] rounded-2xl p-6 sm:p-8 lg:p-10 relative overflow-hidden shadow-2xl">
       <!-- Patrón de dots en el fondo -->
       <div class="absolute inset-0 opacity-10">
         <div class="w-full h-full" style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 20px 20px;"></div>
       </div>
-      
+
       <div class="relative z-10 grid lg:grid-cols-2 gap-6 lg:gap-8 items-start lg:items-center">
-        
+
         <!-- Contenido izquierdo - Pregunta -->
         <div class="text-white">
           <h2 class="text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight">
             {t('quote.title')}
           </h2>
         </div>
-        
-        <!-- Contenido derecho - Formulario de Kommo -->
+
+        <!-- Contenido derecho - Preview del formulario (abre modal al interactuar) -->
         <div class="bg-white rounded-2xl p-3 sm:p-4 lg:p-5 shadow-lg w-full">
-          <FormularioKommo />
+          <CotizacionFormPreview />
         </div>
-        
+
       </div>
     </div>
-    
+
   </div>
 </section>
+
+<!-- Modal con el form standalone en iframe -->
+<CotizacionModal />
 

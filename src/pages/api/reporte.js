@@ -1,12 +1,7 @@
 import axios from 'axios';
-import https from 'https';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 export const prerender = false;
-
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: false
-});
 
 function getCustomFieldValue(customFields, fieldId) {
   if (!customFields || !fieldId) return '';
@@ -68,20 +63,19 @@ async function fetchAllLeads(kommoSubdomain, accessToken, fromTimestamp, toTimes
   let hasMore = true;
 
   while (hasMore) {
-    const params = { 
-      page, 
-      limit, 
+    const params = {
+      page,
+      limit,
       with: 'contacts',
       'filter[created_at][from]': fromTimestamp,
       'filter[created_at][to]': toTimestamp
     };
-    
+
     const response = await axios.get(
       `https://${kommoSubdomain}.kommo.com/api/v4/leads`,
       {
         params,
         headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        httpsAgent,
         timeout: 30000
       }
     );
@@ -102,7 +96,6 @@ async function fetchContactDetails(kommoSubdomain, accessToken, contactId) {
       `https://${kommoSubdomain}.kommo.com/api/v4/contacts/${contactId}`,
       {
         headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        httpsAgent,
         timeout: 10000
       }
     );
@@ -125,7 +118,6 @@ async function fetchNextTaskForLead(kommoSubdomain, accessToken, leadId) {
           'limit': 1
         },
         headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        httpsAgent,
         timeout: 10000
       }
     );
@@ -142,16 +134,16 @@ async function fetchNextTaskForLead(kommoSubdomain, accessToken, leadId) {
 async function fetchCustomFields(kommoSubdomain, accessToken) {
   const [leadsRes, contactsRes, pipelinesRes, lossReasonsRes] = await Promise.all([
     axios.get(`https://${kommoSubdomain}.kommo.com/api/v4/leads/custom_fields`, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }, httpsAgent, timeout: 15000
+      headers: { 'Authorization': `Bearer ${accessToken}` }, timeout: 15000
     }),
     axios.get(`https://${kommoSubdomain}.kommo.com/api/v4/contacts/custom_fields`, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }, httpsAgent, timeout: 15000
+      headers: { 'Authorization': `Bearer ${accessToken}` }, timeout: 15000
     }),
     axios.get(`https://${kommoSubdomain}.kommo.com/api/v4/leads/pipelines`, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }, httpsAgent, timeout: 15000
+      headers: { 'Authorization': `Bearer ${accessToken}` }, timeout: 15000
     }),
     axios.get(`https://${kommoSubdomain}.kommo.com/api/v4/leads/loss_reasons`, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }, httpsAgent, timeout: 15000
+      headers: { 'Authorization': `Bearer ${accessToken}` }, timeout: 15000
     }).catch(() => ({ data: { _embedded: { loss_reasons: [] } } }))
   ]);
 
@@ -168,6 +160,8 @@ const LEAD_FIELDS = {
   FECHA_HORA_CONTACTO_INBOUND: 799852,
   CANAL_COMERCIAL: 799854,
   CANAL_DEL_LEAD: 799856,
+  // Campo 'Lleva Descuento' de Kommo — Sí=lleva, No=no lleva
+  LLEVA_DESCUENTO: 814716,
   MENSAJE_INICIAL: 799858,
   APLICA_LEAD: 799860,
   TIENE_EXPERIENCIA: 799862,
@@ -207,6 +201,35 @@ function getLossReasonName(lossReasons, lossReasonId) {
   return name;
 }
 
+// Columnas del reporte en orden
+const COLUMNS = [
+  'Fecha y hora de contacto',
+  'Medio que uso el lead para encontrarnos',
+  'Canal que uso el lead para contactarnos',
+  'Aplica descuento',
+  'Qué buscaba?',
+  'Nombre del contacto inbound',
+  'Información de contacto del lead inbound',
+  'Correo',
+  'Mensaje del contacto inbound',
+  'Lead aplica como lead o no?',
+  'Fecha de la 1era atención (en call center)',
+  'Hora de la 1era atención (en call center)',
+  'Tiene experiencia con el servicio?',
+  'Qué va a guardar?',
+  'Por qué el lead necesita guardar esas cosas en un depósito?',
+  'Intención de Compra',
+  'Sucursal Ofrecida',
+  'Sucursal Elegida por Cliente',
+  'Nombre con el que el lead inbound fue registrado en site link',
+  'Estatus del lead',
+  '¿Qué hará con sus bienes?',
+  'Motivo de la pérdida',
+  'Visitó?',
+  'Estado final',
+  'Fecha de seguimiento'
+];
+
 export async function GET({ request }) {
   const headers = { 'Content-Type': 'application/json' };
 
@@ -224,15 +247,27 @@ export async function GET({ request }) {
     // Obtener parámetros de fecha
     const fromDate = url.searchParams.get('from');
     const toDate = url.searchParams.get('to');
-    
+
     if (!fromDate || !toDate) {
       return new Response(JSON.stringify({ success: false, error: 'Parámetros de fecha requeridos (from, to)' }), { status: 400, headers });
     }
-    
+
     // Convertir fechas a timestamps Unix (inicio del día from, fin del día to)
     const fromTimestamp = Math.floor(new Date(fromDate + 'T00:00:00').getTime() / 1000);
     const toTimestamp = Math.floor(new Date(toDate + 'T23:59:59').getTime() / 1000);
-    
+
+    // Validar que las fechas sean válidas y el rango sea coherente
+    if (isNaN(fromTimestamp) || isNaN(toTimestamp)) {
+      return new Response(JSON.stringify({ success: false, error: 'Fechas inválidas' }), { status: 400, headers });
+    }
+    if (fromTimestamp > toTimestamp) {
+      return new Response(JSON.stringify({ success: false, error: 'La fecha de inicio debe ser anterior a la fecha de fin' }), { status: 400, headers });
+    }
+    const MAX_RANGE_SECONDS = 93 * 24 * 60 * 60; // 93 días en segundos
+    if (toTimestamp - fromTimestamp > MAX_RANGE_SECONDS) {
+      return new Response(JSON.stringify({ success: false, error: 'Rango máximo: 93 días' }), { status: 400, headers });
+    }
+
     console.log(`Filtro de fechas: ${fromDate} (${fromTimestamp}) - ${toDate} (${toTimestamp})`);
 
     console.log('Obteniendo pipelines y loss reasons...');
@@ -274,7 +309,7 @@ export async function GET({ request }) {
       const cf = lead.custom_fields_values || [];
       const statusName = getStatusName(pipelines, lead.status_id);
       const fechaHoraInbound = getCustomFieldValue(cf, LEAD_FIELDS.FECHA_HORA_CONTACTO_INBOUND);
-      
+
       // Determinar estado final basado en status_id
       let estadoFinal = '';
       if (lead.status_id === STATUS.GANADO) estadoFinal = 'Ganado';
@@ -284,6 +319,7 @@ export async function GET({ request }) {
         'Fecha y hora de contacto': formatTimestamp(lead.created_at),
         'Medio que uso el lead para encontrarnos': getCustomFieldValue(cf, LEAD_FIELDS.CANAL_COMERCIAL),
         'Canal que uso el lead para contactarnos': getCustomFieldValue(cf, LEAD_FIELDS.CANAL_DEL_LEAD),
+        'Aplica descuento': getCustomFieldValue(cf, LEAD_FIELDS.LLEVA_DESCUENTO),
         'Qué buscaba?': getCustomFieldValue(cf, LEAD_FIELDS.NECESITAS),
         'Nombre del contacto inbound': getCustomFieldValue(cf, LEAD_FIELDS.NOMBRE_COMPLETO) || contactName,
         'Información de contacto del lead inbound': contactPhone,
@@ -310,11 +346,24 @@ export async function GET({ request }) {
       if ((i + 1) % 50 === 0) console.log(`Procesados ${i + 1}/${leads.length} leads`);
     }
 
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
+    // Generar Excel con exceljs
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Leads');
 
-    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    // Definir columnas con encabezados
+    worksheet.columns = COLUMNS.map(col => ({
+      header: col,
+      key: col,
+      width: 25
+    }));
+
+    // Agregar filas de datos
+    for (const row of rows) {
+      worksheet.addRow(row);
+    }
+
+    // Escribir a buffer en memoria
+    const excelBuffer = await workbook.xlsx.writeBuffer();
     const today = new Date().toISOString().split('T')[0];
     const filename = `Reporte Kommo ${today}.xlsx`;
 
@@ -327,11 +376,11 @@ export async function GET({ request }) {
     });
 
   } catch (error) {
+    // Loggear detalle completo internamente — NUNCA exponer al cliente
     console.error('Error generando reporte:', error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message,
-      stack: error.stack
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Error interno al generar el reporte'
     }), { status: 500, headers });
   }
 }

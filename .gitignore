@@ -25,3 +25,7 @@ pnpm-debug.log*
 
 # vercel
 .vercel/
+
+# lockfiles de otros package managers (el proyecto usa pnpm)
+package-lock.json
+yarn.lock
