@@ -5,7 +5,9 @@ const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 
 // URL del form standalone — se configura en .env como PUBLIC_FORM_URL
-const formUrl = import.meta.env.PUBLIC_FORM_URL ?? 'https://leadform.almacenajes.net';
+// Fallback también cubre string vacío/whitespace (env declarada pero sin valor en el deploy)
+const rawFormUrl = import.meta.env.PUBLIC_FORM_URL;
+const formUrl = rawFormUrl?.trim() ? rawFormUrl.trim() : 'https://leadform.almacenajes.net';
 const currentLang = lang;
 ---
 
@@ -412,10 +414,18 @@ const currentLang = lang;
     try {
       allowedOrigin = new URL(formUrl).origin;
     } catch {
+      // formUrl inválida o vacía en el dataset — hace visible un problema de configuración
+      console.warn('[CotizacionModal] postMessage descartado: formUrl inválida', { formUrl });
       return;
     }
 
-    if (e.origin !== allowedOrigin) return;
+    if (e.origin !== allowedOrigin) {
+      console.warn('[CotizacionModal] postMessage descartado: origin no permitido', {
+        received: e.origin,
+        allowed: allowedOrigin,
+      });
+      return;
+    }
 
     const data = e.data as AmdPostMessage;
     if (data?.type !== 'amd-lead-submitted') return;
