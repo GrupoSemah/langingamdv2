@@ -1,0 +1,106 @@
+---
+// CTA de WhatsApp para la sección de cotización (#cotizacion).
+// Reemplaza al formulario embebido (CotizacionFormPreview + CotizacionModal) dentro de la
+// misma card blanca de la sección — mismo contenedor, mismos colores de marca, misma
+// tipografía. Ver CotizacionSection.astro para el toggle reversible entre ambos.
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+import WhatsAppIcon from './icons/WhatsAppIcon.astro';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const WHATSAPP_NUMBER = '50767815555';
+
+// Mismo mensaje pre-rellenado que el botón flotante (src/components/WhatsAppButton.astro)
+// para mantener un único punto de verdad sobre el copy que recibe Nancy en WhatsApp.
+const prefilledMessages = {
+	es: '¡Hola! Vi su página y me interesa cotizar un espacio de almacenaje. ¿Me pueden ayudar?',
+	en: "Hi! I saw your website and I'm interested in getting a quote for a storage space. Can you help me?",
+} as const;
+
+const whatsappMessage = prefilledMessages[lang];
+const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
+
+// Misma etiqueta de conversión de Google Ads que el botón flotante — se configura en
+// .env como PUBLIC_WHATSAPP_CONVERSION_LABEL. Mientras esté vacía, no se dispara el evento.
+const rawConversionLabel = import.meta.env.PUBLIC_WHATSAPP_CONVERSION_LABEL;
+const conversionLabel = rawConversionLabel?.trim() ?? '';
+
+const benefits = [t('quote.whatsapp.benefit1'), t('quote.whatsapp.benefit2'), t('quote.whatsapp.benefit3')];
+---
+
+<div class="cotizacion-whatsapp-cta">
+	<!-- Encabezado sin ícono: el único ícono de WhatsApp visible en la card es el del botón
+	     principal, para no duplicarlo (feedback del Jefe) -->
+	<div class="mb-5">
+		<p class="text-sm font-medium text-gray-700 sm:text-base">
+			{t('quote.whatsapp.subtitle')}
+		</p>
+	</div>
+
+	<!-- Beneficios breves, mismo tono/tamaño que las etiquetas del formulario original -->
+	<ul class="mb-6 space-y-2.5">
+		{
+			benefits.map((benefit) => (
+				<li class="flex items-start gap-2.5 text-sm text-gray-600">
+					<svg
+						class="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-primary)]"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+					>
+						<path d="M5 13l4 4L19 7" />
+					</svg>
+					<span>{benefit}</span>
+				</li>
+			))
+		}
+	</ul>
+
+	<!-- CTA principal: mismo lenguaje visual que el submit original (rounded-lg, font-bold,
+	     shadow-lg, hover:scale) en el naranja de marca EXACTO (--color-primary), igual que la
+	     card exterior de la sección, para que el botón "combine" en vez de verse marrón — pedido
+	     directo del Jefe (prioridad #1: mismo color de marca, no un tono derivado). Texto/ícono
+	     en blanco; el contraste puro es ~2.78:1 (bajo AA formal), así que se compensa la
+	     legibilidad con font-extrabold + un drop-shadow/text-shadow sutil (sin tocar el color
+	     de fondo) — ver CotizacionSection.astro para la card contenedora. Ícono: WhatsAppIcon
+	     compartido (mismo glifo oficial que el botón flotante, ver WhatsAppButton.astro) -->
+	<a
+		href={whatsappUrl}
+		target="_blank"
+		rel="noopener noreferrer"
+		id="cotizacion-whatsapp-button"
+		data-conversion-label={conversionLabel}
+		aria-label={t('quote.whatsapp.aria')}
+		class="flex w-full items-center justify-center gap-2.5 rounded-lg bg-[var(--color-primary)] px-6 py-3.5 font-extrabold text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-[color-mix(in_srgb,var(--color-primary)_88%,black)] hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] focus-visible:ring-offset-2"
+	>
+		<WhatsAppIcon class="h-5 w-5 shrink-0 [filter:drop-shadow(0_1px_1px_rgba(0,0,0,0.35))]" />
+		<span class="[text-shadow:0_1px_2px_rgba(0,0,0,0.35)]">{t('quote.whatsapp.cta')}</span>
+	</a>
+</div>
+
+<script>
+	import { bindWhatsAppConversion } from '../scripts/whatsappConversion';
+
+	function initCotizacionWhatsAppButton() {
+		bindWhatsAppConversion(document.getElementById('cotizacion-whatsapp-button'));
+	}
+
+	document.addEventListener('astro:page-load', initCotizacionWhatsAppButton);
+</script>
+
+<style>
+	.cotizacion-whatsapp-cta {
+		width: 100%;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		#cotizacion-whatsapp-button {
+			transition: none;
+		}
+	}
+</style>
