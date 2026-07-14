@@ -1,0 +1,119 @@
+---
+// Botón flotante de WhatsApp, global en todas las páginas (ES/EN).
+// Convive con el formulario de cotización (FormularioKommo) — no lo reemplaza.
+// Ícono: WhatsAppIcon compartido (mismo glifo oficial que el CTA de CotizacionWhatsApp.astro).
+import { getLangFromUrl } from '../i18n/utils';
+import WhatsAppIcon from './icons/WhatsAppIcon.astro';
+
+const lang = getLangFromUrl(Astro.url);
+
+const WHATSAPP_NUMBER = '50767815555';
+
+// Mensaje pre-rellenado por idioma (mismo patrón local que CookieConsent.astro)
+const prefilledMessages = {
+	es: '¡Hola! Vi su página y me interesa cotizar un espacio de almacenaje. ¿Me pueden ayudar?',
+	en: "Hi! I saw your website and I'm interested in getting a quote for a storage space. Can you help me?",
+} as const;
+
+const labels = {
+	es: {
+		aria: 'Chatear por WhatsApp',
+		tooltip: 'Escríbenos por WhatsApp',
+	},
+	en: {
+		aria: 'Chat on WhatsApp',
+		tooltip: 'Message us on WhatsApp',
+	},
+} as const;
+
+const whatsappMessage = prefilledMessages[lang];
+const { aria: ariaLabel, tooltip: tooltipText } = labels[lang];
+const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
+
+// Etiqueta de conversión de Google Ads — se configura en .env como PUBLIC_WHATSAPP_CONVERSION_LABEL
+// Formato esperado: "AW-976110472/XXXXXXXXXXX". Mientras esté vacía, no se dispara el evento.
+const rawConversionLabel = import.meta.env.PUBLIC_WHATSAPP_CONVERSION_LABEL;
+const conversionLabel = rawConversionLabel?.trim() ?? '';
+---
+
+<a
+	href={whatsappUrl}
+	target="_blank"
+	rel="noopener noreferrer"
+	id="whatsapp-float-button"
+	class="group fixed right-5 bottom-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white transition-transform duration-200 ease-out hover:scale-110 hover:bg-[#20BD5A] focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 md:right-6 md:bottom-6 md:h-16 md:w-16"
+	aria-label={ariaLabel}
+	data-conversion-label={conversionLabel}
+>
+	<WhatsAppIcon class="relative h-7 w-7 md:h-8 md:w-8" />
+
+	<span
+		class="tooltip-label pointer-events-none absolute right-full mr-3 hidden whitespace-nowrap rounded-md bg-[var(--color-dark)] px-3 py-1.5 text-sm font-medium text-white opacity-0 shadow-md transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 md:block"
+		aria-hidden="true"
+	>
+		{tooltipText}
+	</span>
+</a>
+
+<script>
+	import { bindWhatsAppConversion } from '../scripts/whatsappConversion';
+
+	// El botón vive en Layout.astro y persiste en el DOM entre navegaciones de
+	// astro:transitions, pero el registro del listener se re-ejecuta explícitamente
+	// en cada 'astro:page-load' (incluye la carga inicial) para no depender de que
+	// Astro reutilice el mismo nodo tras cada swap de página.
+	function initWhatsAppFloatButton() {
+		bindWhatsAppConversion(document.getElementById('whatsapp-float-button'));
+	}
+
+	document.addEventListener('astro:page-load', initWhatsAppFloatButton);
+</script>
+
+<style>
+	/* Sombra en capas (contenida, sin difuminado) + anillo de pulso discreto.
+	   Reemplaza el halo verde difuso anterior (círculo duplicado con blur/scale) por un
+	   drop shadow limpio en reposo y un anillo delgado que se expande y se desvanece,
+	   sin relleno, para un acabado pulido en vez de un "glow" amateur. */
+	#whatsapp-float-button {
+		box-shadow:
+			0 4px 14px rgba(0, 0, 0, 0.18),
+			0 2px 4px rgba(0, 0, 0, 0.12);
+		animation: whatsapp-pulse 2.8s ease-out infinite;
+	}
+
+	@keyframes whatsapp-pulse {
+		0% {
+			box-shadow:
+				0 4px 14px rgba(0, 0, 0, 0.18),
+				0 2px 4px rgba(0, 0, 0, 0.12),
+				0 0 0 0 rgba(37, 211, 102, 0.35);
+		}
+		70%,
+		100% {
+			box-shadow:
+				0 4px 14px rgba(0, 0, 0, 0.18),
+				0 2px 4px rgba(0, 0, 0, 0.12),
+				0 0 0 10px rgba(37, 211, 102, 0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		#whatsapp-float-button {
+			animation: none;
+			transition: none;
+		}
+	}
+
+	/* Respeta el safe-area de dispositivos con notch/home indicator */
+	#whatsapp-float-button {
+		right: max(1.25rem, env(safe-area-inset-right));
+		bottom: max(1.25rem, env(safe-area-inset-bottom));
+	}
+
+	@media (min-width: 768px) {
+		#whatsapp-float-button {
+			right: max(1.5rem, env(safe-area-inset-right));
+			bottom: max(1.5rem, env(safe-area-inset-bottom));
+		}
+	}
+</style>

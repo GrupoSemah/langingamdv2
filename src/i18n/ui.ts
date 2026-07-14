@@ -27,7 +27,17 @@ export const ui = {
     
     // Quote Section
     'quote.title': '¿Buscas alquiler de mini depósitos en Panamá?',
-    
+    'quote.whatsapp.subtitle': 'Cotiza en minutos, sin llenar formularios',
+    'quote.whatsapp.benefit1': 'Respuesta inmediata de nuestro equipo',
+    'quote.whatsapp.benefit2': 'Asesoría personalizada según tus necesidades',
+    'quote.whatsapp.benefit3': 'Cotización clara y sin compromiso',
+    'quote.whatsapp.cta': 'Cotizar por WhatsApp',
+    'quote.whatsapp.aria': 'Cotizar por WhatsApp, se abre en una pestaña nueva',
+    'quote.whatsapp.trust': 'Respondemos de lunes a domingo, 6:00 a.m. – 6:00 p.m.',
+
+    // Formulario alternativo (sección secundaria, antes del footer)
+    'quote.form.title': '¿Prefieres que te contactemos?',
+
     // Form
     'form.name': 'Nombre completo',
     'form.name.placeholder': 'Tu nombre',
@@ -252,7 +262,17 @@ export const ui = {
     
     // Quote Section - Professional US tone
     'quote.title': 'Need secure storage units or warehouse space in Panamá?',
-    
+    'quote.whatsapp.subtitle': 'Get a quote in minutes — no forms required',
+    'quote.whatsapp.benefit1': 'Immediate response from our team',
+    'quote.whatsapp.benefit2': 'Personalized advice tailored to your needs',
+    'quote.whatsapp.benefit3': 'Clear, no-obligation quote',
+    'quote.whatsapp.cta': 'Get a Quote on WhatsApp',
+    'quote.whatsapp.aria': 'Get a quote on WhatsApp, opens in a new tab',
+    'quote.whatsapp.trust': 'We reply Monday through Sunday, 6:00 AM – 6:00 PM',
+
+    // Alternative form (secondary section, before the footer)
+    'quote.form.title': 'Prefer that we reach out to you?',
+
     // Form
     'form.name': 'Full name',
     'form.name.placeholder': 'Your name',

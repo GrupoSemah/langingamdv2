@@ -1,7 +1,11 @@
 ---
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
-import CotizacionFormPreview from './CotizacionFormPreview.astro';
-import CotizacionModal from './CotizacionModal.astro';
+import CotizacionWhatsApp from './CotizacionWhatsApp.astro';
+// Formulario original (preview + modal con iframe a Kommo) — reemplazado por el CTA de
+// WhatsApp mientras se retira el flujo de leads por formulario. Se deja comentado (no se
+// borra ningún archivo) para poder revertir de inmediato si el Jefe lo pide:
+// import CotizacionFormPreview from './CotizacionFormPreview.astro';
+// import CotizacionModal from './CotizacionModal.astro';
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -26,9 +30,9 @@ const t = useTranslations(lang);
           </h2>
         </div>
 
-        <!-- Contenido derecho - Preview del formulario (abre modal al interactuar) -->
+        <!-- Contenido derecho - CTA de WhatsApp (reemplaza el preview del formulario) -->
         <div class="bg-white rounded-2xl p-3 sm:p-4 lg:p-5 shadow-lg w-full">
-          <CotizacionFormPreview />
+          <CotizacionWhatsApp />
         </div>
 
       </div>
@@ -37,6 +41,6 @@ const t = useTranslations(lang);
   </div>
 </section>
 
-<!-- Modal con el form standalone en iframe -->
-<CotizacionModal />
+<!-- Modal con el form standalone en iframe — comentado junto con el formulario original.
+     <CotizacionModal /> -->
 

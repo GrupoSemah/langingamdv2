@@ -9,6 +9,7 @@ import ServiciosSection from '../components/ServiciosSection.astro';
 import TamanosSection from '../components/TamanosSection.astro';
 import SucursalesSection from '../components/SucursalesSection.astro';
 import RecomendacionSection from '../components/RecomendacionSection.astro';
+import FormularioSection from '../components/FormularioSection.astro';
 import Footer from '../components/Footer.astro';
 import SEO from '../components/SEO.astro';
 import { seoConfig, canonicalUrls, ogImages } from '../config/seo';
@@ -56,6 +57,9 @@ const seoData = {
 		
 		<!-- Sección Recomendaciones -->
 		<RecomendacionSection />
+
+		<!-- Sección alternativa: formulario (secundario al CTA de WhatsApp de #cotizacion) -->
+		<FormularioSection />
 	</main>
 	<Footer />
 </Layout>
