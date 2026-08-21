@@ -282,6 +282,8 @@ const currentLang = lang;
 </style>
 
 <script>
+  import { fireQuoteConversionFromModal } from '../scripts/quoteConversion';
+
   // ─── Tipos ───────────────────────────────────────────────────────────────────
 
   interface AmdPostMessage {
@@ -430,12 +432,17 @@ const currentLang = lang;
     const data = e.data as AmdPostMessage;
     if (data?.type !== 'amd-lead-submitted') return;
 
-    closeModal();
-
     // Redirigir según idioma
     const lang = modal.dataset.lang ?? 'es';
     const thankYouPath = lang === 'en' ? '/en/thank-you-quote' : '/gracias-cotizacion';
-    window.location.href = thankYouPath;
+
+    // Disparo real de la conversión de Google Ads (origin ya validado arriba, no depende de
+    // document.referrer). Cierre + redirección quedan DENTRO del callback para que la
+    // navegación no cancele el beacon de conversión antes de que salga.
+    fireQuoteConversionFromModal(() => {
+      closeModal();
+      window.location.href = thankYouPath;
+    });
   }
 
   // ─── Inicialización ──────────────────────────────────────────────────────────
