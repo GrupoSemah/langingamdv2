@@ -69,25 +69,40 @@ const benefits = [t('quote.whatsapp.benefit1'), t('quote.whatsapp.benefit2'), t(
 	     legibilidad con font-extrabold + un drop-shadow/text-shadow sutil (sin tocar el color
 	     de fondo) — ver CotizacionSection.astro para la card contenedora. Ícono: WhatsAppIcon
 	     compartido (mismo glifo oficial que el botón flotante, ver WhatsAppButton.astro) -->
-	<a
-		href={whatsappUrl}
-		target="_blank"
-		rel="noopener noreferrer"
+	<button
+		type="button"
 		id="cotizacion-whatsapp-button"
 		data-conversion-label={conversionLabel}
+		data-whatsapp-url={whatsappUrl}
 		aria-label={t('quote.whatsapp.aria')}
 		class="flex w-full items-center justify-center gap-2.5 rounded-lg bg-[var(--color-primary)] px-6 py-3.5 font-extrabold text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-[color-mix(in_srgb,var(--color-primary)_88%,black)] hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] focus-visible:ring-offset-2"
 	>
 		<WhatsAppIcon class="h-5 w-5 shrink-0 [filter:drop-shadow(0_1px_1px_rgba(0,0,0,0.35))]" />
 		<span class="[text-shadow:0_1px_2px_rgba(0,0,0,0.35)]">{t('quote.whatsapp.cta')}</span>
-	</a>
+	</button>
 </div>
 
 <script>
 	import { bindWhatsAppConversion } from '../scripts/whatsappConversion';
+	import { openWhatsAppModal } from '../scripts/whatsappModalBridge';
 
 	function initCotizacionWhatsAppButton() {
-		bindWhatsAppConversion(document.getElementById('cotizacion-whatsapp-button'));
+		const button = document.getElementById('cotizacion-whatsapp-button');
+
+		// Conversión de Google Ads: se dispara en la intención de click original (sin cambios).
+		bindWhatsAppConversion(button);
+
+		if (button && button.dataset.whatsappModalBound !== 'true') {
+			button.dataset.whatsappModalBound = 'true';
+
+			button.addEventListener('click', () => {
+				// Debe llamarse de forma síncrona (sin await previo) — ver whatsappModalBridge.ts.
+				openWhatsAppModal({
+					whatsappUrl: button.dataset.whatsappUrl ?? '',
+					source: 'quote_cta',
+				});
+			});
+		}
 	}
 
 	document.addEventListener('astro:page-load', initCotizacionWhatsAppButton);

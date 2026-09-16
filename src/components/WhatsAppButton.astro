@@ -36,14 +36,13 @@ const rawConversionLabel = import.meta.env.PUBLIC_WHATSAPP_CONVERSION_LABEL;
 const conversionLabel = rawConversionLabel?.trim() ?? '';
 ---
 
-<a
-	href={whatsappUrl}
-	target="_blank"
-	rel="noopener noreferrer"
+<button
+	type="button"
 	id="whatsapp-float-button"
 	class="group fixed right-5 bottom-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white transition-transform duration-200 ease-out hover:scale-110 hover:bg-[#20BD5A] focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 md:right-6 md:bottom-6 md:h-16 md:w-16"
 	aria-label={ariaLabel}
 	data-conversion-label={conversionLabel}
+	data-whatsapp-url={whatsappUrl}
 >
 	<WhatsAppIcon class="relative h-7 w-7 md:h-8 md:w-8" />
 
@@ -53,17 +52,34 @@ const conversionLabel = rawConversionLabel?.trim() ?? '';
 	>
 		{tooltipText}
 	</span>
-</a>
+</button>
 
 <script>
 	import { bindWhatsAppConversion } from '../scripts/whatsappConversion';
+	import { openWhatsAppModal } from '../scripts/whatsappModalBridge';
 
 	// El botón vive en Layout.astro y persiste en el DOM entre navegaciones de
 	// astro:transitions, pero el registro del listener se re-ejecuta explícitamente
 	// en cada 'astro:page-load' (incluye la carga inicial) para no depender de que
 	// Astro reutilice el mismo nodo tras cada swap de página.
 	function initWhatsAppFloatButton() {
-		bindWhatsAppConversion(document.getElementById('whatsapp-float-button'));
+		const button = document.getElementById('whatsapp-float-button');
+
+		// Conversión de Google Ads: se dispara en la intención de click original (sin cambios),
+		// sin esperar a que el usuario complete el modal de teléfono.
+		bindWhatsAppConversion(button);
+
+		if (button && button.dataset.whatsappModalBound !== 'true') {
+			button.dataset.whatsappModalBound = 'true';
+
+			button.addEventListener('click', () => {
+				// Debe llamarse de forma síncrona (sin await previo) — ver whatsappModalBridge.ts.
+				openWhatsAppModal({
+					whatsappUrl: button.dataset.whatsappUrl ?? '',
+					source: 'float_button',
+				});
+			});
+		}
 	}
 
 	document.addEventListener('astro:page-load', initWhatsAppFloatButton);
