@@ -198,6 +198,11 @@ async function forwardToInternalCapture(
         captureId,
         status: response.status,
       });
+    } else {
+      console.log('[whatsapp-lead] downstream capture forwarded ok', {
+        captureId,
+        status: response.status,
+      });
     }
   } catch (error) {
     console.error('[whatsapp-lead] downstream capture unreachable or timed out', {
