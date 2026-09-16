@@ -28,15 +28,20 @@
     "astro": "^5.18.2",
     "axios": "^1.16.1",
     "exceljs": "^4.4.0",
+    "libphonenumber-js": "^1.13.13",
     "marked": "^18.0.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tailwindcss": "^4.3.0"
+    "tailwindcss": "^4.3.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "astro-compress": "^2.4.1"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "sharp"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp"
+    ]
   }
 }

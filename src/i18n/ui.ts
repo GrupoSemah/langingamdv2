@@ -35,6 +35,19 @@ export const ui = {
     'quote.whatsapp.aria': 'Cotizar por WhatsApp, se abre en una pestaña nueva',
     'quote.whatsapp.trust': 'Respondemos de lunes a domingo, 6:00 a.m. – 6:00 p.m.',
 
+    // Modal de teléfono previo a WhatsApp (WhatsAppPhoneModal)
+    'whatsapp.modal.title': 'Antes de continuar',
+    'whatsapp.modal.description': 'Déjanos tu número para poder ayudarte mejor por WhatsApp.',
+    'whatsapp.modal.country.label': 'País',
+    'whatsapp.modal.phone.label': 'Número de teléfono',
+    'whatsapp.modal.phone.placeholder': 'Tu número de teléfono',
+    'whatsapp.modal.phone.error': 'Ingresa un número de teléfono válido para el país seleccionado.',
+    'whatsapp.modal.cta': 'Continuar a WhatsApp',
+    'whatsapp.modal.cta.sending': 'Conectando...',
+    'whatsapp.modal.cancel': 'Cancelar',
+    'whatsapp.modal.close.aria': 'Cerrar',
+    'whatsapp.modal.turnstile.error': 'Completa la verificación para continuar.',
+
     // Formulario alternativo (sección secundaria, antes del footer)
     'quote.form.title': '¿Prefieres que te contactemos?',
 
@@ -269,6 +282,19 @@ export const ui = {
     'quote.whatsapp.cta': 'Get a Quote on WhatsApp',
     'quote.whatsapp.aria': 'Get a quote on WhatsApp, opens in a new tab',
     'quote.whatsapp.trust': 'We reply Monday through Sunday, 6:00 AM – 6:00 PM',
+
+    // Phone modal shown before redirecting to WhatsApp (WhatsAppPhoneModal)
+    'whatsapp.modal.title': 'Before you continue',
+    'whatsapp.modal.description': 'Leave us your number so we can help you better on WhatsApp.',
+    'whatsapp.modal.country.label': 'Country',
+    'whatsapp.modal.phone.label': 'Phone number',
+    'whatsapp.modal.phone.placeholder': 'Your phone number',
+    'whatsapp.modal.phone.error': 'Enter a valid phone number for the selected country.',
+    'whatsapp.modal.cta': 'Continue to WhatsApp',
+    'whatsapp.modal.cta.sending': 'Connecting...',
+    'whatsapp.modal.cancel': 'Cancel',
+    'whatsapp.modal.close.aria': 'Close',
+    'whatsapp.modal.turnstile.error': 'Complete the verification to continue.',
 
     // Alternative form (secondary section, before the footer)
     'quote.form.title': 'Prefer that we reach out to you?',

@@ -4,6 +4,7 @@ import CookieConsent from '../components/CookieConsent.astro';
 import BfcacheOptimizer from '../components/BfcacheOptimizer.astro';
 import PerformanceMonitor from '../components/PerformanceMonitor.astro';
 import WhatsAppButton from '../components/WhatsAppButton.astro';
+import WhatsAppPhoneModal from '../components/WhatsAppPhoneModal.tsx';
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
 import '../styles/global.css';
 
@@ -26,10 +27,15 @@ const defaultDescriptions = {
 	en: "Professional storage services and self storage units. Movement analysis, transparent pricing, and customized solutions for your storage needs."
 };
 
-const { 
-	title = defaultTitles[lang], 
-	description = defaultDescriptions[lang] 
+const {
+	title = defaultTitles[lang],
+	description = defaultDescriptions[lang]
 } = Astro.props;
+
+// Site key pública de Turnstile — fallback al sitekey de test "always passes" de Cloudflare
+// para no romper dev/preview si la variable no está configurada (mismo patrón que
+// form-almacenajes/src/components/LeadQuizForm.astro).
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '1x00000000000000000000AA';
 ---
 
 <!doctype html>
@@ -59,6 +65,14 @@ const {
 		<!-- Preload Gilroy fonts for better performance -->
 		<link rel="preload" href="/fonts/Gilroy-Light.woff" as="font" type="font/woff" crossorigin>
 		<link rel="preload" href="/fonts/Gilroy-Extrabold.woff" as="font" type="font/woff" crossorigin>
+
+		<!-- Cloudflare Turnstile — cargado en el layout para que esté disponible antes de que el
+		     usuario abra el modal de captura de teléfono de WhatsApp (WhatsAppPhoneModal.tsx). -->
+		<script
+			src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+			async
+			defer
+		></script>
 		
 		<!-- Favicon optimizado -->
 		<link rel="icon" type="image/webp" href="/favicon.webp" />
@@ -144,6 +158,27 @@ const {
 
 		<!-- Botón flotante de WhatsApp -->
 		<WhatsAppButton />
+
+		<!-- Modal de teléfono previo a WhatsApp — instancia única y global, compartida por el botón
+		     flotante y el CTA de la sección de cotización (ambos disparan el mismo evento). Los
+		     textos se resuelven acá en el servidor (useTranslations) y se pasan como props, para no
+		     enviar todo src/i18n/ui.ts al bundle del cliente. -->
+		<WhatsAppPhoneModal
+			client:load
+			lang={lang}
+			title={t('whatsapp.modal.title')}
+			description={t('whatsapp.modal.description')}
+			countryLabel={t('whatsapp.modal.country.label')}
+			phoneLabel={t('whatsapp.modal.phone.label')}
+			phonePlaceholder={t('whatsapp.modal.phone.placeholder')}
+			phoneError={t('whatsapp.modal.phone.error')}
+			cta={t('whatsapp.modal.cta')}
+			ctaSending={t('whatsapp.modal.cta.sending')}
+			cancel={t('whatsapp.modal.cancel')}
+			closeAria={t('whatsapp.modal.close.aria')}
+			siteKey={turnstileSiteKey}
+			turnstileError={t('whatsapp.modal.turnstile.error')}
+		/>
 
 		<!-- bfcache Optimization -->
 		<BfcacheOptimizer />
