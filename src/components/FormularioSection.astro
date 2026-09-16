@@ -7,8 +7,10 @@
 // pequeña que #cotizacion. Contenido minimalista: un solo encabezado corto + form.
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
 import CotizacionFormPreview from './CotizacionFormPreview.astro';
-import CotizacionModal from './CotizacionModal.astro';
 
+// CotizacionModal ahora vive en Layout.astro (instancia única y global, compartida con los
+// triggers de WhatsApp) — no se vuelve a renderizar acá para evitar dos elementos con el
+// mismo id="cotizacion-modal" en el DOM, lo cual rompería getElementById en su script.
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 ---
@@ -27,5 +29,3 @@ const t = useTranslations(lang);
     </div>
   </div>
 </section>
-
-<CotizacionModal />
