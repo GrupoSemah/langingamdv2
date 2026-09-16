@@ -15,7 +15,8 @@
     "build": "astro build",
     "start": "node ./dist/server/entry.mjs",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "vitest run"
   },
   "dependencies": {
     "@astrojs/node": "^9.5.5",
@@ -36,7 +37,8 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "astro-compress": "^2.4.1"
+    "astro-compress": "^2.4.1",
+    "vitest": "^4.1.11"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

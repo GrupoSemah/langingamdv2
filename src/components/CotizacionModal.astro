@@ -62,7 +62,7 @@ const currentLang = lang;
         class="cotizacion-iframe"
         loading="lazy"
         allow="clipboard-write"
-        sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-top-navigation-by-user-activation"
+        sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
       ></iframe>
     </div>
   </div>
@@ -283,6 +283,7 @@ const currentLang = lang;
 
 <script>
   import { fireQuoteConversionFromModal } from '../scripts/quoteConversion';
+  import { isValidWhatsAppUrl, resolveIntent, type ModalIntent } from '../lib/whatsapp-intent';
 
   // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -295,6 +296,12 @@ const currentLang = lang;
   let isModalOpen = false;
   let focusTrapElements: HTMLElement[] = [];
   let lastFocusedElement: HTMLElement | null = null;
+
+  // Intención con la que se abrió el modal (quote vs whatsapp) y guard de
+  // navegación de un solo uso — evita que un segundo postMessage dispare
+  // una segunda conversión/navegación.
+  let pendingIntent: ModalIntent | null = null;
+  let navigated = false;
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -310,9 +317,12 @@ const currentLang = lang;
     return document.getElementById('cotizacion-spinner');
   }
 
-  function openModal() {
+  function openModal(detail?: unknown) {
     if (isModalOpen) return;
     isModalOpen = true;
+
+    pendingIntent = resolveIntent(detail);
+    navigated = false;
 
     const modal = getModal();
     if (!modal) return;
@@ -365,6 +375,10 @@ const currentLang = lang;
     lastFocusedElement = null;
 
     removeFocusTrap();
+
+    // Reset crítico: sin esto, cerrar el modal abierto en modo whatsapp sin
+    // enviar y luego reabrirlo desde el CTA normal heredaría el intent viejo.
+    pendingIntent = null;
   }
 
   function setupFocusTrap(modal: HTMLElement) {
@@ -432,15 +446,30 @@ const currentLang = lang;
     const data = e.data as AmdPostMessage;
     if (data?.type !== 'amd-lead-submitted') return;
 
+    // Guard de una sola ejecución: un segundo postMessage (ej. el iframe reintenta)
+    // no debe disparar una segunda conversión ni una segunda navegación.
+    if (navigated) return;
+    navigated = true;
+
     // Redirigir según idioma
     const lang = modal.dataset.lang ?? 'es';
     const thankYouPath = lang === 'en' ? '/en/thank-you-quote' : '/gracias-cotizacion';
+
+    // Capturado ANTES de fireQuoteConversionFromModal: closeModal() resetea
+    // pendingIntent a null, y closeModal corre dentro del callback siguiente.
+    const intent = pendingIntent;
 
     // Disparo real de la conversión de Google Ads (origin ya validado arriba, no depende de
     // document.referrer). Cierre + redirección quedan DENTRO del callback para que la
     // navegación no cancele el beacon de conversión antes de que salga.
     fireQuoteConversionFromModal(() => {
       closeModal();
+
+      if (intent?.mode === 'whatsapp' && intent.whatsappUrl && isValidWhatsAppUrl(intent.whatsappUrl)) {
+        window.location.href = intent.whatsappUrl;
+        return;
+      }
+
       window.location.href = thankYouPath;
     });
   }
@@ -478,8 +507,13 @@ const currentLang = lang;
     // Escuchar postMessage del form standalone
     window.addEventListener('message', handleIframeMessage);
 
-    // Escuchar el evento custom que emite CotizacionFormPreview
-    document.addEventListener('amd:open-modal', openModal);
+    // Escuchar el evento custom que emite CotizacionFormPreview (mode: 'quote')
+    // y, ahora también, los botones de WhatsApp (mode: 'whatsapp'). El detail
+    // se resuelve de forma defensiva en openModal() via resolveIntent().
+    document.addEventListener('amd:open-modal', (event: Event) => {
+      const detail: unknown = (event as CustomEvent).detail;
+      openModal(detail);
+    });
   }
 
   document.addEventListener('astro:page-load', init);

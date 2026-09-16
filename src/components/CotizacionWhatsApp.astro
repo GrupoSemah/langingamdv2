@@ -11,20 +11,16 @@ const t = useTranslations(lang);
 
 const WHATSAPP_NUMBER = '50767815555';
 
-// Mismo mensaje pre-rellenado que el botón flotante (src/components/WhatsAppButton.astro)
-// para mantener un único punto de verdad sobre el copy que recibe Nancy en WhatsApp.
+// Mismo mensaje pre-rellenado que el botón flotante (src/components/WhatsAppButton.astro) para
+// mantener un único punto de verdad sobre el copy que recibe Nancy en WhatsApp. Asume que el
+// usuario ya completó el modal de cotización antes de llegar acá (ver script más abajo).
 const prefilledMessages = {
-	es: '¡Hola! Vi su página y me interesa cotizar un espacio de almacenaje. ¿Me pueden ayudar?',
-	en: "Hi! I saw your website and I'm interested in getting a quote for a storage space. Can you help me?",
+	es: 'Hola, acabo de completar el formulario de cotización en la web y quiero continuar por acá.',
+	en: 'Hi, I just completed the quote form on the website and would like to continue here.',
 } as const;
 
 const whatsappMessage = prefilledMessages[lang];
 const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
-
-// Misma etiqueta de conversión de Google Ads que el botón flotante — se configura en
-// .env como PUBLIC_WHATSAPP_CONVERSION_LABEL. Mientras esté vacía, no se dispara el evento.
-const rawConversionLabel = import.meta.env.PUBLIC_WHATSAPP_CONVERSION_LABEL;
-const conversionLabel = rawConversionLabel?.trim() ?? '';
 
 const benefits = [t('quote.whatsapp.benefit1'), t('quote.whatsapp.benefit2'), t('quote.whatsapp.benefit3')];
 ---
@@ -72,7 +68,6 @@ const benefits = [t('quote.whatsapp.benefit1'), t('quote.whatsapp.benefit2'), t(
 	<button
 		type="button"
 		id="cotizacion-whatsapp-button"
-		data-conversion-label={conversionLabel}
 		data-whatsapp-url={whatsappUrl}
 		aria-label={t('quote.whatsapp.aria')}
 		class="flex w-full items-center justify-center gap-2.5 rounded-lg bg-[var(--color-primary)] px-6 py-3.5 font-extrabold text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-[color-mix(in_srgb,var(--color-primary)_88%,black)] hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] focus-visible:ring-offset-2"
@@ -83,24 +78,25 @@ const benefits = [t('quote.whatsapp.benefit1'), t('quote.whatsapp.benefit2'), t(
 </div>
 
 <script>
-	import { bindWhatsAppConversion } from '../scripts/whatsappConversion';
-	import { openWhatsAppModal } from '../scripts/whatsappModalBridge';
-
+	// Flujo actual: click → abre el modal de cotización (CotizacionModal, hoisteado en
+	// Layout.astro) en modo 'whatsapp'. El propio modal navega a WhatsApp al enviar el Quiz;
+	// la conversión de Google Ads se dispara desde ahí (unificada), no en este click.
 	function initCotizacionWhatsAppButton() {
 		const button = document.getElementById('cotizacion-whatsapp-button');
-
-		// Conversión de Google Ads: se dispara en la intención de click original (sin cambios).
-		bindWhatsAppConversion(button);
 
 		if (button && button.dataset.whatsappModalBound !== 'true') {
 			button.dataset.whatsappModalBound = 'true';
 
 			button.addEventListener('click', () => {
-				// Debe llamarse de forma síncrona (sin await previo) — ver whatsappModalBridge.ts.
-				openWhatsAppModal({
-					whatsappUrl: button.dataset.whatsappUrl ?? '',
-					source: 'quote_cta',
-				});
+				document.dispatchEvent(
+					new CustomEvent('amd:open-modal', {
+						detail: {
+							mode: 'whatsapp',
+							whatsappUrl: button.dataset.whatsappUrl ?? '',
+							source: 'cotizacion-section',
+						},
+					}),
+				);
 			});
 		}
 	}
