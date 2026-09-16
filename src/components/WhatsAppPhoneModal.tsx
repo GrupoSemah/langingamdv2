@@ -105,11 +105,14 @@ async function sendLeadBestEffort(payload: {
 	const timeoutId = window.setTimeout(() => controller.abort(), LEAD_REQUEST_TIMEOUT_MS);
 
 	try {
+		// keepalive permite que el request sobreviva a la navegación que ocurre justo después
+		// (ver handleSubmit): sin esto, el browser cancela el fetch al descargar la página actual.
 		await fetch('/api/whatsapp-lead', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload),
 			signal: controller.signal,
+			keepalive: true,
 		});
 	} catch {
 		// Silencioso a propósito — ver nota arriba.
@@ -181,30 +184,14 @@ function TurnstileWidget({ siteKey, onToken, onExpired }: TurnstileWidgetProps) 
 	return <div ref={containerRef} className="mt-4" />;
 }
 
-/** Heurística simple de mobile — mismo criterio que el resto del sitio para deep links de WhatsApp. */
-function isMobileUserAgent(): boolean {
-	if (typeof navigator === 'undefined') return false;
-	return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-}
-
 /**
- * Abre/navega a WhatsApp. Debe invocarse como la PRIMERA acción síncrona del handler de submit
- * (antes del `fetch` best-effort del lead) — el click en "Continuar a WhatsApp" es en sí mismo
- * un gesto de usuario genuino, así que el navegador no bloquea `window.open` acá aunque se llame
- * antes de un `await` posterior en el mismo handler. En mobile se usa `location.href` (deep link
- * directo, sin pop-up); en desktop `window.open` con fallback a `location.href` en la misma
- * pestaña si el navegador igual lo bloquea (poco probable en este flujo, pero por las dudas).
+ * Navega a WhatsApp SIEMPRE en la misma pestaña, tanto en mobile como en desktop (pedido explícito
+ * del Jefe: nunca abrir una pestaña/ventana nueva). El lead ya fue disparado como fire-and-forget
+ * ANTES de esta llamada (ver handleSubmit) con `keepalive: true`, así que el POST sobrevive a esta
+ * navegación aunque no se haya esperado su resolución.
  */
 function navigateToWhatsApp(whatsappUrl: string): void {
-	if (isMobileUserAgent()) {
-		window.location.href = whatsappUrl;
-		return;
-	}
-
-	const newWindow = window.open(whatsappUrl, '_blank', 'noopener');
-	if (!newWindow) {
-		window.location.href = whatsappUrl;
-	}
+	window.location.href = whatsappUrl;
 }
 
 export default function WhatsAppPhoneModal({
@@ -385,21 +372,20 @@ export default function WhatsAppPhoneModal({
 			isSubmittingRef.current = true;
 			setIsSubmitting(true);
 
-			// Navegar a WhatsApp es la PRIMERA acción real del handler, antes de cualquier await —
-			// este click es un gesto de usuario genuino, así que no dispara el bloqueador de pop-ups.
-			// Ya no hace falta pre-abrir una ventana en blanco en el trigger original (float button /
-			// CTA de cotización): eso era lo que generaba la pestaña en blanco confusa reportada.
-			navigateToWhatsApp(pending.whatsappUrl);
-
+			// El POST del lead se dispara SIN esperar (fire-and-forget): con `keepalive: true` el
+			// request sobrevive a la navegación que ocurre justo debajo, así que ya no hace falta
+			// bloquear la UX esperando la respuesta antes de mandar al usuario a WhatsApp. La función
+			// nunca rechaza (todo error queda atrapado en su propio try/catch), por eso no requiere
+			// `.catch()` adicional acá.
 			const e164Phone = parsePhoneNumberFromString(phoneInput, country)?.number ?? phoneInput;
-
-			await sendLeadBestEffort({
+			void sendLeadBestEffort({
 				phone: e164Phone,
 				lang,
 				source: pending.source,
 				turnstileToken,
 			});
 
+			navigateToWhatsApp(pending.whatsappUrl);
 			closeModal();
 		},
 		[isValid, pending, turnstileToken, phoneInput, country, lang, closeModal],
