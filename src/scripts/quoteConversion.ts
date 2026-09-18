@@ -33,23 +33,42 @@ function fireConversion(onDone: () => void): void {
 	const win = window as GtagWindow;
 	let done = false;
 
-	const finish = (): void => {
+	// `viaTimeout` distingue si `finish` se resolvió por el `event_callback` real de gtag
+	// o por el timeout de red de seguridad. El snippet inline de gtag (Layout.astro) define
+	// `window.gtag` de forma síncrona sin importar si el script externo gtag/js cargó — un
+	// ad-blocker típico deja `gtag` como función válida (solo hace `dataLayer.push`), por lo
+	// que la llamada NUNCA lanza excepción y el `event_callback` simplemente no llega nunca.
+	// Sin este log, ese caso (el más común en producción) queda invisible.
+	const finish = (viaTimeout: boolean): void => {
 		if (done) return;
 		done = true;
+		if (viaTimeout) {
+			try {
+				console.error(
+					'[quoteConversion] event_callback de gtag no respondió dentro de 1s (posible ad-blocker o gtag.js bloqueado) — se continúa el flujo igual'
+				);
+			} catch {
+				// un console.error roto (webview parcheado) no debe bloquear el redirect
+			}
+		}
 		onDone();
 	};
 
 	try {
 		if (typeof win.gtag === 'function') {
-			win.gtag('event', 'conversion', { send_to: CONVERSION_SEND_TO, event_callback: finish });
-			setTimeout(finish, 1000);
+			win.gtag('event', 'conversion', {
+				send_to: CONVERSION_SEND_TO,
+				event_callback: () => finish(false),
+			});
+			setTimeout(() => finish(true), 1000);
 			return;
 		}
+		console.error('[quoteConversion] window.gtag no está disponible — conversión no reportada a Google Ads');
 	} catch (err) {
-		console.warn('[quoteConversion] gtag lanzó una excepción', err);
+		console.error('[quoteConversion] gtag lanzó una excepción', err);
 	}
 
-	finish();
+	finish(false);
 }
 
 function markFiredForDedupe(): void {
