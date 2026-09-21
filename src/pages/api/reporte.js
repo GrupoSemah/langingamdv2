@@ -1,6 +1,6 @@
-import axios from 'axios';
 import ExcelJS from 'exceljs';
 import crypto from 'node:crypto';
+import { kommoRequest, isCircuitOpen, getCircuitRetryAfterMs, KommoBlockedError, KommoRateLimitError } from '../../lib/kommo/governor.js';
 
 export const prerender = false;
 
@@ -13,6 +13,42 @@ export const prerender = false;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // ventana de 1 minuto
 const RATE_LIMIT_MAX_REQUESTS = 5; // máx 5 solicitudes de reporte por IP por minuto
 const rateLimitStore = new Map(); // clientIp -> { count, windowStart }
+
+// --- Single-flight lock: solo UN reporte puede generarse a la vez (memoria del proceso) ---
+let reportInProgress = false;
+
+// --- Cache LRU simple de reportes ya generados, por rango de fechas exacto ---
+const REPORT_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutos
+const REPORT_CACHE_MAX_ENTRIES = 3;
+/** @type {Map<string, { buffer: ExcelJS.Buffer, filename: string, expiresAt: number }>} */
+const reportCache = new Map(); // key `${from}|${to}` -> { buffer, filename, expiresAt }
+
+// --- Deadline global del handler ---
+const GLOBAL_DEADLINE_MS = 240 * 1000; // 240s
+
+/**
+ * Error interno usado para abortar el handler cuando se supera el deadline global.
+ * No se expone tal cual al cliente — se traduce a un mensaje claro en el catch.
+ */
+class ReportDeadlineExceededError extends Error {
+  constructor() {
+    super('DEADLINE_EXCEEDED');
+    this.name = 'ReportDeadlineExceededError';
+  }
+}
+
+/**
+ * Lanza ReportDeadlineExceededError si ya se superó el deadline global del handler.
+ * Se llama entre fases y dentro de loops de paginación largos para poder abortar
+ * a mitad de camino en vez de solo al final.
+ * @param {number} startedAt - timestamp (ms) de inicio del handler
+ * @param {number} deadlineMs - deadline en ms desde startedAt
+ */
+function assertDeadline(startedAt, deadlineMs) {
+  if (Date.now() - startedAt > deadlineMs) {
+    throw new ReportDeadlineExceededError();
+  }
+}
 
 function getClientIp(request) {
   const forwardedFor = request.headers.get('x-forwarded-for');
@@ -58,6 +94,38 @@ function isValidSecret(provided, expected) {
     return false;
   }
   return crypto.timingSafeEqual(providedBuf, expectedBuf);
+}
+
+/**
+ * Busca un reporte cacheado vigente para la clave dada. Aplica TTL y refresca
+ * la posición en el Map para semántica LRU (más reciente al final).
+ * @param {string} key
+ * @returns {{ buffer: ExcelJS.Buffer, filename: string, expiresAt: number } | null}
+ */
+function getCachedReport(key) {
+  const entry = reportCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    reportCache.delete(key);
+    return null;
+  }
+  reportCache.delete(key);
+  reportCache.set(key, entry);
+  return entry;
+}
+
+/**
+ * Guarda un reporte en el cache, descartando la entrada más vieja si ya se
+ * alcanzó el máximo de entradas (LRU simple basado en orden de inserción del Map).
+ * @param {string} key
+ * @param {{ buffer: ExcelJS.Buffer, filename: string, expiresAt: number }} entry
+ */
+function setCachedReport(key, entry) {
+  if (reportCache.size >= REPORT_CACHE_MAX_ENTRIES) {
+    const oldestKey = reportCache.keys().next().value;
+    reportCache.delete(oldestKey);
+  }
+  reportCache.set(key, entry);
 }
 
 function getCustomFieldValue(customFields, fieldId) {
@@ -113,13 +181,26 @@ function formatTime(timestamp) {
   return `${hours}:${minutes}`;
 }
 
-async function fetchAllLeads(kommoSubdomain, accessToken, fromTimestamp, toTimestamp) {
+/**
+ * Trae todos los leads del rango de fechas, paginando de a 250. El pacing entre
+ * páginas (rate limit, reintentos, circuit breaker) lo maneja `kommoRequest`
+ * internamente — no se agregan sleeps manuales acá.
+ * @param {string} kommoSubdomain
+ * @param {string} accessToken
+ * @param {number} fromTimestamp
+ * @param {number} toTimestamp
+ * @param {number} startedAt
+ * @returns {Promise<Array<object>>}
+ */
+async function fetchAllLeads(kommoSubdomain, accessToken, fromTimestamp, toTimestamp, startedAt) {
   let allLeads = [];
   let page = 1;
   const limit = 250;
   let hasMore = true;
 
   while (hasMore) {
+    assertDeadline(startedAt, GLOBAL_DEADLINE_MS);
+
     const params = {
       page,
       limit,
@@ -128,80 +209,267 @@ async function fetchAllLeads(kommoSubdomain, accessToken, fromTimestamp, toTimes
       'filter[created_at][to]': toTimestamp
     };
 
-    const response = await axios.get(
-      `https://${kommoSubdomain}.kommo.com/api/v4/leads`,
-      {
-        params,
-        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        timeout: 30000
-      }
-    );
+    const response = await kommoRequest({
+      method: 'get',
+      url: `https://${kommoSubdomain}.kommo.com/api/v4/leads`,
+      params,
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      timeout: 30000
+    });
     const leads = response.data?._embedded?.leads || [];
     allLeads = allLeads.concat(leads);
     hasMore = leads.length === limit;
-    if (hasMore) {
-      page++;
-      await new Promise(resolve => setTimeout(resolve, 250));
-    }
+    if (hasMore) page++;
   }
   return allLeads;
 }
 
+/**
+ * Trae un contacto individual. Sin catch propio: si `kommoRequest` lanza
+ * (bloqueo, rate limit agotado, u otro error), se propaga al caller —
+ * ya no se silencia como columnas vacías.
+ * @param {string} kommoSubdomain
+ * @param {string} accessToken
+ * @param {number} contactId
+ * @returns {Promise<object>}
+ */
 async function fetchContactDetails(kommoSubdomain, accessToken, contactId) {
-  try {
-    const response = await axios.get(
-      `https://${kommoSubdomain}.kommo.com/api/v4/contacts/${contactId}`,
-      {
-        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        timeout: 10000
-      }
-    );
-    return response.data;
-  } catch {
-    return null;
-  }
+  const response = await kommoRequest({
+    method: 'get',
+    url: `https://${kommoSubdomain}.kommo.com/api/v4/contacts/${contactId}`,
+    headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    timeout: 10000
+  });
+  return response.data;
 }
 
-async function fetchNextTaskForLead(kommoSubdomain, accessToken, leadId) {
-  try {
-    const response = await axios.get(
-      `https://${kommoSubdomain}.kommo.com/api/v4/tasks`,
-      {
-        params: {
-          'filter[entity_id]': leadId,
-          'filter[entity_type]': 'leads',
-          'filter[is_completed]': 0,
-          'order[complete_till]': 'asc',
-          'limit': 1
-        },
-        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        timeout: 10000
-      }
-    );
-    const tasks = response.data?._embedded?.tasks || [];
-    if (tasks.length > 0) {
-      return tasks[0].complete_till;
-    }
-    return null;
-  } catch {
-    return null;
+/**
+ * Trae los contactos de una lista de IDs en lotes de 250 usando el filtro de
+ * array de Kommo (`filter[id][]=...`), en vez de una request por contacto.
+ *
+ * NOTA DE VERIFICACIÓN: no se pudo probar en vivo contra la cuenta de Kommo
+ * desde este entorno (sin acceso de red/credenciales acá). `filter[id][]` es
+ * la sintaxis documentada por Kommo/amoCRM para filtrar por múltiples IDs, así
+ * que se implementa como camino primario. Como red de seguridad en runtime, si
+ * la respuesta no trae contactos o trae IDs fuera del chunk pedido (señal de
+ * que el filtro fue ignorado por el servidor), se hace fallback automático a
+ * fetch individual por contacto para ese chunk, con un `console.warn` explícito.
+ * Recomendado confirmar en staging con datos reales antes de confiar 100% en
+ * el camino batch.
+ *
+ * @param {string} kommoSubdomain
+ * @param {string} accessToken
+ * @param {number[]} contactIds
+ * @param {number} startedAt
+ * @returns {Promise<Map<number, object>>}
+ */
+async function fetchContactsBatch(kommoSubdomain, accessToken, contactIds, startedAt) {
+  const contactsMap = new Map();
+  if (contactIds.length === 0) return contactsMap;
+
+  const CHUNK_SIZE = 250;
+  const chunks = [];
+  for (let i = 0; i < contactIds.length; i += CHUNK_SIZE) {
+    chunks.push(contactIds.slice(i, i + CHUNK_SIZE));
   }
+
+  for (const chunk of chunks) {
+    assertDeadline(startedAt, GLOBAL_DEADLINE_MS);
+
+    const response = await kommoRequest({
+      method: 'get',
+      url: `https://${kommoSubdomain}.kommo.com/api/v4/contacts`,
+      params: {
+        'filter[id][]': chunk,
+        limit: CHUNK_SIZE
+      },
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      timeout: 30000
+    });
+
+    const contacts = response.data?._embedded?.contacts || [];
+    const requestedIds = new Set(chunk);
+    // El filtro "funcionó" si vino vacío (podría ser legítimo si los contactos
+    // ya no existen) O si TODOS los IDs devueltos pertenecen al chunk pedido.
+    // Si vino algún ID fuera del chunk, el filtro fue ignorado por el servidor.
+    const filterIgnored = contacts.some(c => !requestedIds.has(c.id));
+
+    if (contacts.length === 0 || filterIgnored) {
+      console.warn(
+        `[reporte] filter[id][] no se comportó como se esperaba para un chunk de ${chunk.length} contactos ` +
+        `(${contacts.length === 0 ? 'respuesta vacía' : 'IDs devueltos fuera del chunk pedido'}). ` +
+        `Usando fallback de fetch individual por contacto.`
+      );
+      for (const id of chunk) {
+        assertDeadline(startedAt, GLOBAL_DEADLINE_MS);
+        const contactDetails = await fetchContactDetails(kommoSubdomain, accessToken, id);
+        if (contactDetails) contactsMap.set(id, contactDetails);
+      }
+    } else {
+      for (const contact of contacts) {
+        contactsMap.set(contact.id, contact);
+      }
+    }
+  }
+
+  return contactsMap;
+}
+
+/**
+ * Arma el Map<contactId, contactDetails> para todos los contactos principales
+ * de la lista de leads, deduplicando IDs antes de pedirlos.
+ * @param {string} kommoSubdomain
+ * @param {string} accessToken
+ * @param {Array<object>} leads
+ * @param {number} startedAt
+ * @returns {Promise<Map<number, object>>}
+ */
+async function buildContactsMap(kommoSubdomain, accessToken, leads, startedAt) {
+  const contactIds = new Set();
+  for (const lead of leads) {
+    const mainContact = lead._embedded?.contacts?.[0];
+    if (mainContact) contactIds.add(mainContact.id);
+  }
+  return fetchContactsBatch(kommoSubdomain, accessToken, Array.from(contactIds), startedAt);
+}
+
+/**
+ * Trae la próxima tarea pendiente de un lead individual. Sin catch propio:
+ * un error se propaga al caller en vez de silenciarse.
+ * @param {string} kommoSubdomain
+ * @param {string} accessToken
+ * @param {number} leadId
+ * @returns {Promise<object | null>}
+ */
+async function fetchNextTaskForLead(kommoSubdomain, accessToken, leadId) {
+  const response = await kommoRequest({
+    method: 'get',
+    url: `https://${kommoSubdomain}.kommo.com/api/v4/tasks`,
+    params: {
+      'filter[entity_id]': leadId,
+      'filter[entity_type]': 'leads',
+      'filter[is_completed]': 0,
+      'order[complete_till]': 'asc',
+      'limit': 1
+    },
+    headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    timeout: 10000
+  });
+  const tasks = response.data?._embedded?.tasks || [];
+  return tasks.length > 0 ? tasks[0] : null;
+}
+
+const TASKS_PAGE_LIMIT = 250;
+const TASKS_MAX_PAGES = 40; // cap defensivo para evitar loop infinito ante una respuesta anómala
+
+/**
+ * Trae, en lote paginado, todas las tareas pendientes de tipo "leads" y arma
+ * un Map<leadId, task> quedándose con la de `complete_till` más próxima por lead.
+ * @param {string} kommoSubdomain
+ * @param {string} accessToken
+ * @param {number} startedAt
+ * @returns {Promise<Map<number, object>>}
+ */
+async function fetchTasksForLeadsBatch(kommoSubdomain, accessToken, startedAt) {
+  const tasksMap = new Map();
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    if (page > TASKS_MAX_PAGES) {
+      console.warn(`[reporte] fetchTasksForLeadsBatch alcanzó el cap de ${TASKS_MAX_PAGES} páginas — puede haber tareas no incluidas en el reporte.`);
+      break;
+    }
+    assertDeadline(startedAt, GLOBAL_DEADLINE_MS);
+
+    const response = await kommoRequest({
+      method: 'get',
+      url: `https://${kommoSubdomain}.kommo.com/api/v4/tasks`,
+      params: {
+        page,
+        limit: TASKS_PAGE_LIMIT,
+        'filter[entity_type]': 'leads',
+        'filter[is_completed]': 0
+      },
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      timeout: 30000
+    });
+
+    const tasks = response.data?._embedded?.tasks || [];
+    for (const task of tasks) {
+      if (task.entity_type !== 'leads') continue;
+      const existing = tasksMap.get(task.entity_id);
+      if (!existing || task.complete_till < existing.complete_till) {
+        tasksMap.set(task.entity_id, task);
+      }
+    }
+
+    hasMore = tasks.length === TASKS_PAGE_LIMIT;
+    if (hasMore) page++;
+  }
+
+  return tasksMap;
+}
+
+/**
+ * Arma el Map<leadId, task> de próxima tarea pendiente por lead. Usa el camino
+ * batch paginado si hay volumen (>100 leads); si no, fetch individual por lead
+ * (no hay volumen que justifique el batching).
+ * @param {string} kommoSubdomain
+ * @param {string} accessToken
+ * @param {Array<object>} leads
+ * @param {number} startedAt
+ * @returns {Promise<Map<number, object>>}
+ */
+async function buildTasksMap(kommoSubdomain, accessToken, leads, startedAt) {
+  if (leads.length > 100) {
+    return fetchTasksForLeadsBatch(kommoSubdomain, accessToken, startedAt);
+  }
+
+  const tasksMap = new Map();
+  for (const lead of leads) {
+    assertDeadline(startedAt, GLOBAL_DEADLINE_MS);
+    const task = await fetchNextTaskForLead(kommoSubdomain, accessToken, lead.id);
+    if (task) tasksMap.set(lead.id, task);
+  }
+  return tasksMap;
 }
 
 async function fetchCustomFields(kommoSubdomain, accessToken) {
+  const authHeaders = { 'Authorization': `Bearer ${accessToken}` };
+
   const [leadsRes, contactsRes, pipelinesRes, lossReasonsRes] = await Promise.all([
-    axios.get(`https://${kommoSubdomain}.kommo.com/api/v4/leads/custom_fields`, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }, timeout: 15000
+    kommoRequest({
+      method: 'get',
+      url: `https://${kommoSubdomain}.kommo.com/api/v4/leads/custom_fields`,
+      headers: authHeaders,
+      timeout: 15000
     }),
-    axios.get(`https://${kommoSubdomain}.kommo.com/api/v4/contacts/custom_fields`, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }, timeout: 15000
+    kommoRequest({
+      method: 'get',
+      url: `https://${kommoSubdomain}.kommo.com/api/v4/contacts/custom_fields`,
+      headers: authHeaders,
+      timeout: 15000
     }),
-    axios.get(`https://${kommoSubdomain}.kommo.com/api/v4/leads/pipelines`, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }, timeout: 15000
+    kommoRequest({
+      method: 'get',
+      url: `https://${kommoSubdomain}.kommo.com/api/v4/leads/pipelines`,
+      headers: authHeaders,
+      timeout: 15000
     }),
-    axios.get(`https://${kommoSubdomain}.kommo.com/api/v4/leads/loss_reasons`, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }, timeout: 15000
-    }).catch(() => ({ data: { _embedded: { loss_reasons: [] } } }))
+    kommoRequest({
+      method: 'get',
+      url: `https://${kommoSubdomain}.kommo.com/api/v4/leads/loss_reasons`,
+      headers: authHeaders,
+      timeout: 15000
+    }).catch((err) => {
+      // Bloqueo o rate limit agotado: esto NO es un fallo aceptable de degradar
+      // silenciosamente, debe abortar el reporte entero igual que cualquier otra falla dura.
+      if (err instanceof KommoBlockedError || err instanceof KommoRateLimitError) throw err;
+      // Cualquier otro error en este endpoint puntual (ej. 404) sí se degrada
+      // con lista vacía — loss reasons es un dato accesorio, no crítico.
+      return { data: { _embedded: { loss_reasons: [] } } };
+    })
   ]);
 
   return {
@@ -287,8 +555,78 @@ const COLUMNS = [
   'Fecha de seguimiento'
 ];
 
+/**
+ * Construye la fila del reporte para un lead. Función SÍNCRONA: solo lee de
+ * los Maps de contactos/tareas ya armados en batch, sin I/O propio.
+ * @param {object} lead
+ * @param {Map<number, object>} contactsMap
+ * @param {Map<number, object>} tasksMap
+ * @param {Array<object>} pipelines
+ * @param {Array<object>} lossReasons
+ * @returns {Record<string, string>}
+ */
+function processLead(lead, contactsMap, tasksMap, pipelines, lossReasons) {
+  let contactName = '';
+  let contactPhone = '';
+  let contactEmail = '';
+
+  const mainContact = lead._embedded?.contacts?.[0];
+  if (mainContact) {
+    const contactDetails = contactsMap.get(mainContact.id);
+    if (contactDetails) {
+      contactName = contactDetails.name || '';
+      const phoneField = contactDetails.custom_fields_values?.find(f => f.field_code === 'PHONE');
+      const emailField = contactDetails.custom_fields_values?.find(f => f.field_code === 'EMAIL');
+      contactPhone = phoneField?.values?.[0]?.value || '';
+      contactEmail = emailField?.values?.[0]?.value || '';
+    }
+  }
+
+  const task = tasksMap.get(lead.id);
+  const nextTaskDate = task ? task.complete_till : null;
+
+  const cf = lead.custom_fields_values || [];
+  const statusName = getStatusName(pipelines, lead.status_id);
+  const fechaHoraInbound = getCustomFieldValue(cf, LEAD_FIELDS.FECHA_HORA_CONTACTO_INBOUND);
+
+  // Determinar estado final basado en status_id
+  let estadoFinal = '';
+  if (lead.status_id === STATUS.GANADO) estadoFinal = 'Ganado';
+  else if (lead.status_id === STATUS.PERDIDO) estadoFinal = 'Perdido';
+
+  return {
+    'Fecha y hora de contacto': formatTimestamp(lead.created_at),
+    'Medio que uso el lead para encontrarnos': getCustomFieldValue(cf, LEAD_FIELDS.CANAL_COMERCIAL),
+    'Canal que uso el lead para contactarnos': getCustomFieldValue(cf, LEAD_FIELDS.CANAL_DEL_LEAD),
+    'Aplica descuento': getCustomFieldValue(cf, LEAD_FIELDS.LLEVA_DESCUENTO),
+    'Qué buscaba?': getCustomFieldValue(cf, LEAD_FIELDS.NECESITAS),
+    'Nombre del contacto inbound': getCustomFieldValue(cf, LEAD_FIELDS.NOMBRE_COMPLETO) || contactName,
+    'Información de contacto del lead inbound': contactPhone,
+    'Correo': contactEmail,
+    'Mensaje del contacto inbound': getCustomFieldValue(cf, LEAD_FIELDS.MENSAJE_INICIAL),
+    'Lead aplica como lead o no?': getCustomFieldValue(cf, LEAD_FIELDS.APLICA_LEAD),
+    'Fecha de la 1era atención (en call center)': fechaHoraInbound ? formatDate(fechaHoraInbound) : '',
+    'Hora de la 1era atención (en call center)': fechaHoraInbound ? formatTime(fechaHoraInbound) : '',
+    'Tiene experiencia con el servicio?': getCustomFieldValue(cf, LEAD_FIELDS.TIENE_EXPERIENCIA),
+    'Qué va a guardar?': getCustomFieldValue(cf, LEAD_FIELDS.QUE_VA_A_GUARDAR),
+    'Por qué el lead necesita guardar esas cosas en un depósito?': getCustomFieldValue(cf, LEAD_FIELDS.MOTIVACION),
+    'Intención de Compra': getCustomFieldValue(cf, LEAD_FIELDS.INTENCION_COMPRA),
+    'Sucursal Ofrecida': getCustomFieldValue(cf, LEAD_FIELDS.SUCURSAL_OFRECIDA),
+    'Sucursal Elegida por Cliente': getCustomFieldValue(cf, LEAD_FIELDS.SUCURSAL_ELEGIDA_CLIENTE),
+    'Nombre con el que el lead inbound fue registrado en site link': getCustomFieldValue(cf, LEAD_FIELDS.NOMBRE_COMPLETO) || contactName,
+    'Estatus del lead': getCustomFieldValue(cf, LEAD_FIELDS.ESTADO_DEL_LEAD) || statusName,
+    '¿Qué hará con sus bienes?': getCustomFieldValue(cf, LEAD_FIELDS.QUE_HARA_CON_BIENES),
+    'Motivo de la pérdida': getLossReasonName(lossReasons, lead.loss_reason_id),
+    'Visitó?': getCustomFieldValue(cf, LEAD_FIELDS.VISITO),
+    'Estado final': estadoFinal,
+    'Fecha de seguimiento': nextTaskDate ? formatTimestamp(nextTaskDate) : ''
+  };
+}
+
 export async function GET({ request }) {
   const headers = { 'Content-Type': 'application/json' };
+  const handlerStartedAt = Date.now();
+  let lockAcquired = false;
 
   try {
     const url = new URL(request.url);
@@ -315,9 +653,12 @@ export async function GET({ request }) {
       return new Response(JSON.stringify({ success: false, error: 'Parámetros de fecha requeridos (from, to)' }), { status: 400, headers });
     }
 
-    // Convertir fechas a timestamps Unix (inicio del día from, fin del día to)
-    const fromTimestamp = Math.floor(new Date(fromDate + 'T00:00:00').getTime() / 1000);
-    const toTimestamp = Math.floor(new Date(toDate + 'T23:59:59').getTime() / 1000);
+    // Convertir fechas a timestamps Unix (inicio del día from, fin del día to).
+    // Se fija explícitamente el offset -05:00 de Panamá (sin horario de verano)
+    // para que el rango sea correcto sin importar la zona horaria del servidor
+    // donde corra el proceso de Node (Dokploy puede no estar en America/Panama).
+    const fromTimestamp = Math.floor(new Date(`${fromDate}T00:00:00-05:00`).getTime() / 1000);
+    const toTimestamp = Math.floor(new Date(`${toDate}T23:59:59-05:00`).getTime() / 1000);
 
     // Validar que las fechas sean válidas y el rango sea coherente
     if (isNaN(fromTimestamp) || isNaN(toTimestamp)) {
@@ -326,112 +667,75 @@ export async function GET({ request }) {
     if (fromTimestamp > toTimestamp) {
       return new Response(JSON.stringify({ success: false, error: 'La fecha de inicio debe ser anterior a la fecha de fin' }), { status: 400, headers });
     }
-    const MAX_RANGE_SECONDS = 365 * 24 * 60 * 60; // 365 días en segundos
+    const MAX_RANGE_SECONDS = 365 * 24 * 60 * 60; // 365 días en segundos — viable gracias al batching
     if (toTimestamp - fromTimestamp > MAX_RANGE_SECONDS) {
       return new Response(JSON.stringify({ success: false, error: 'Rango máximo: 365 días' }), { status: 400, headers });
     }
+
+    // Cache hit: servir directo, SIN tocar Kommo ni el single-flight lock.
+    const cacheKey = `${fromDate}|${toDate}`;
+    const cached = getCachedReport(cacheKey);
+    if (cached) {
+      console.log(`[reporte] Cache hit para rango ${cacheKey}`);
+      return new Response(cached.buffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': `attachment; filename="${cached.filename}"`
+        }
+      });
+    }
+
+    // Circuit breaker: si Kommo está bloqueando o el breaker sigue abierto tras
+    // un fallo previo, no insistir — abortar antes de cualquier llamada a Kommo.
+    if (isCircuitOpen()) {
+      const retryAfterMs = getCircuitRetryAfterMs();
+      const responseHeaders = { ...headers };
+      if (retryAfterMs) {
+        responseHeaders['Retry-After'] = String(Math.ceil(retryAfterMs / 1000));
+      }
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Kommo temporalmente no disponible, reintentá en unos minutos',
+        ...(retryAfterMs ? { retryAfterMs } : {})
+      }), { status: 503, headers: responseHeaders });
+    }
+
+    // Single-flight: solo un reporte generándose a la vez en todo el proceso.
+    if (reportInProgress) {
+      return new Response(JSON.stringify({ success: false, error: 'Ya hay un reporte generándose, esperá a que termine' }), { status: 429, headers });
+    }
+    reportInProgress = true;
+    lockAcquired = true;
 
     console.log(`Filtro de fechas: ${fromDate} (${fromTimestamp}) - ${toDate} (${toTimestamp})`);
 
     console.log('Obteniendo pipelines y loss reasons...');
     const { pipelines, lossReasons } = await fetchCustomFields(kommoSubdomain, accessToken);
     console.log('Loss reasons encontradas:', lossReasons.length);
+    assertDeadline(handlerStartedAt, GLOBAL_DEADLINE_MS);
 
     console.log('Obteniendo leads en el rango de fechas...');
-    const leads = await fetchAllLeads(kommoSubdomain, accessToken, fromTimestamp, toTimestamp);
+    const leads = await fetchAllLeads(kommoSubdomain, accessToken, fromTimestamp, toTimestamp, handlerStartedAt);
     console.log(`Total leads: ${leads.length}`);
+    assertDeadline(handlerStartedAt, GLOBAL_DEADLINE_MS);
 
     // Ordenar leads por fecha de creación (ascendente)
     leads.sort((a, b) => a.created_at - b.created_at);
     console.log('Leads ordenados por fecha de creación (ascendente)');
 
-    // Límite de concurrencia hacia la API de Kommo (evita saturarla y timeouts serverless)
-    const LEAD_PROCESSING_CONCURRENCY = 5;
-    let processedLeadsCount = 0;
+    console.log('Obteniendo detalles de contactos en lote...');
+    const contactsMap = await buildContactsMap(kommoSubdomain, accessToken, leads, handlerStartedAt);
+    console.log(`Contactos resueltos: ${contactsMap.size}`);
+    assertDeadline(handlerStartedAt, GLOBAL_DEADLINE_MS);
 
-    async function processLead(lead) {
-      let contactName = '';
-      let contactPhone = '';
-      let contactEmail = '';
+    console.log('Obteniendo próximas tareas pendientes...');
+    const tasksMap = await buildTasksMap(kommoSubdomain, accessToken, leads, handlerStartedAt);
+    console.log(`Tareas resueltas: ${tasksMap.size}`);
+    assertDeadline(handlerStartedAt, GLOBAL_DEADLINE_MS);
 
-      const mainContact = lead._embedded?.contacts?.[0];
-      if (mainContact) {
-        const contactDetails = await fetchContactDetails(kommoSubdomain, accessToken, mainContact.id);
-        if (contactDetails) {
-          contactName = contactDetails.name || '';
-          const phoneField = contactDetails.custom_fields_values?.find(f => f.field_code === 'PHONE');
-          const emailField = contactDetails.custom_fields_values?.find(f => f.field_code === 'EMAIL');
-          contactPhone = phoneField?.values?.[0]?.value || '';
-          contactEmail = emailField?.values?.[0]?.value || '';
-        }
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-
-      const nextTaskDate = await fetchNextTaskForLead(kommoSubdomain, accessToken, lead.id);
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const cf = lead.custom_fields_values || [];
-      const statusName = getStatusName(pipelines, lead.status_id);
-      const fechaHoraInbound = getCustomFieldValue(cf, LEAD_FIELDS.FECHA_HORA_CONTACTO_INBOUND);
-
-      // Determinar estado final basado en status_id
-      let estadoFinal = '';
-      if (lead.status_id === STATUS.GANADO) estadoFinal = 'Ganado';
-      else if (lead.status_id === STATUS.PERDIDO) estadoFinal = 'Perdido';
-
-      processedLeadsCount++;
-      if (processedLeadsCount % 50 === 0) console.log(`Procesados ${processedLeadsCount}/${leads.length} leads`);
-
-      return {
-        'Fecha y hora de contacto': formatTimestamp(lead.created_at),
-        'Medio que uso el lead para encontrarnos': getCustomFieldValue(cf, LEAD_FIELDS.CANAL_COMERCIAL),
-        'Canal que uso el lead para contactarnos': getCustomFieldValue(cf, LEAD_FIELDS.CANAL_DEL_LEAD),
-        'Aplica descuento': getCustomFieldValue(cf, LEAD_FIELDS.LLEVA_DESCUENTO),
-        'Qué buscaba?': getCustomFieldValue(cf, LEAD_FIELDS.NECESITAS),
-        'Nombre del contacto inbound': getCustomFieldValue(cf, LEAD_FIELDS.NOMBRE_COMPLETO) || contactName,
-        'Información de contacto del lead inbound': contactPhone,
-        'Correo': contactEmail,
-        'Mensaje del contacto inbound': getCustomFieldValue(cf, LEAD_FIELDS.MENSAJE_INICIAL),
-        'Lead aplica como lead o no?': getCustomFieldValue(cf, LEAD_FIELDS.APLICA_LEAD),
-        'Fecha de la 1era atención (en call center)': fechaHoraInbound ? formatDate(fechaHoraInbound) : '',
-        'Hora de la 1era atención (en call center)': fechaHoraInbound ? formatTime(fechaHoraInbound) : '',
-        'Tiene experiencia con el servicio?': getCustomFieldValue(cf, LEAD_FIELDS.TIENE_EXPERIENCIA),
-        'Qué va a guardar?': getCustomFieldValue(cf, LEAD_FIELDS.QUE_VA_A_GUARDAR),
-        'Por qué el lead necesita guardar esas cosas en un depósito?': getCustomFieldValue(cf, LEAD_FIELDS.MOTIVACION),
-        'Intención de Compra': getCustomFieldValue(cf, LEAD_FIELDS.INTENCION_COMPRA),
-        'Sucursal Ofrecida': getCustomFieldValue(cf, LEAD_FIELDS.SUCURSAL_OFRECIDA),
-        'Sucursal Elegida por Cliente': getCustomFieldValue(cf, LEAD_FIELDS.SUCURSAL_ELEGIDA_CLIENTE),
-        'Nombre con el que el lead inbound fue registrado en site link': getCustomFieldValue(cf, LEAD_FIELDS.NOMBRE_COMPLETO) || contactName,
-        'Estatus del lead': getCustomFieldValue(cf, LEAD_FIELDS.ESTADO_DEL_LEAD) || statusName,
-        '¿Qué hará con sus bienes?': getCustomFieldValue(cf, LEAD_FIELDS.QUE_HARA_CON_BIENES),
-        'Motivo de la pérdida': getLossReasonName(lossReasons, lead.loss_reason_id),
-        'Visitó?': getCustomFieldValue(cf, LEAD_FIELDS.VISITO),
-        'Estado final': estadoFinal,
-        'Fecha de seguimiento': nextTaskDate ? formatTimestamp(nextTaskDate) : ''
-      };
-    }
-
-    // Pool nativo de concurrencia limitada: mantiene N leads en vuelo simultáneamente
-    // y toma el siguiente en cuanto uno se libera, preservando el orden en `results`.
-    async function processLeadsWithConcurrency(items, limit) {
-      const results = new Array(items.length);
-      let nextIndex = 0;
-
-      async function worker() {
-        while (nextIndex < items.length) {
-          const currentIndex = nextIndex++;
-          results[currentIndex] = await processLead(items[currentIndex]);
-        }
-      }
-
-      const workerCount = Math.min(limit, items.length);
-      await Promise.all(Array.from({ length: workerCount }, () => worker()));
-      return results;
-    }
-
-    const rows = leads.length > 0
-      ? await processLeadsWithConcurrency(leads, LEAD_PROCESSING_CONCURRENCY)
-      : [];
+    // processLead es síncrono: solo lee de los Maps ya armados, sin I/O adicional.
+    const rows = leads.map(lead => processLead(lead, contactsMap, tasksMap, pipelines, lossReasons));
 
     // Generar Excel con exceljs
     const workbook = new ExcelJS.Workbook();
@@ -454,6 +758,12 @@ export async function GET({ request }) {
     const today = new Date().toISOString().split('T')[0];
     const filename = `Reporte Kommo ${today}.xlsx`;
 
+    setCachedReport(cacheKey, {
+      buffer: excelBuffer,
+      filename,
+      expiresAt: Date.now() + REPORT_CACHE_TTL_MS
+    });
+
     return new Response(excelBuffer, {
       status: 200,
       headers: {
@@ -463,11 +773,25 @@ export async function GET({ request }) {
     });
 
   } catch (error) {
+    if (error instanceof KommoBlockedError) {
+      console.error('[reporte] Kommo bloqueó las solicitudes (circuito abierto o 401/403), abortando reporte:', error.message);
+      return new Response(JSON.stringify({ success: false, error: 'Kommo bloqueó las solicitudes, reintentá más tarde' }), { status: 503, headers });
+    }
+    if (error instanceof KommoRateLimitError) {
+      console.error('[reporte] Rate limit de Kommo agotado tras reintentos, abortando reporte:', error.message);
+      return new Response(JSON.stringify({ success: false, error: 'Kommo está limitando las solicitudes, reintentá más tarde' }), { status: 503, headers });
+    }
+    if (error instanceof ReportDeadlineExceededError) {
+      console.error('[reporte] Deadline global de 240s excedido, abortando reporte.');
+      return new Response(JSON.stringify({ success: false, error: 'El reporte tardó demasiado en generarse, probá con un rango de fechas más chico' }), { status: 504, headers });
+    }
     // Loggear detalle completo internamente — NUNCA exponer al cliente
     console.error('Error generando reporte:', error);
     return new Response(JSON.stringify({
       success: false,
       error: 'Error interno al generar el reporte'
     }), { status: 500, headers });
+  } finally {
+    if (lockAcquired) reportInProgress = false;
   }
 }

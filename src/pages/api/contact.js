@@ -1,5 +1,11 @@
-import axios from 'axios';
 import https from 'https';
+import {
+  kommoRequest,
+  isCircuitOpen,
+  getCircuitRetryAfterMs,
+  KommoBlockedError,
+  KommoRateLimitError
+} from '../../lib/kommo/governor.js';
 
 export const prerender = false;
 
@@ -7,6 +13,46 @@ export const prerender = false;
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false
 });
+
+// --- Rate limiting in-memory (por IP, ventana fija) ---
+// Mismo patrón que src/pages/api/reporte.js. El bucket del governor protege a
+// Kommo (nunca deja pasar más de 3 req/s), pero sin límite propio por IP un
+// flood de envíos al formulario puede dejar muchas requests HTTP colgadas hasta
+// 30s esperando token del bucket (self-DoS del propio proceso Node, no de Kommo).
+// LIMITACIÓN CONOCIDA: este store vive en memoria del proceso, no se comparte
+// entre múltiples instancias/workers. Aceptable porque el adapter es
+// @astrojs/node (single-instance detrás de nginx).
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // ventana de 1 minuto
+const RATE_LIMIT_MAX_REQUESTS = 10; // máx 10 envíos de formulario por IP por minuto
+const rateLimitStore = new Map(); // clientIp -> { count, windowStart }
+
+function getClientIp(request) {
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) return forwardedFor.split(',')[0].trim();
+  return request.headers.get('x-real-ip') || 'unknown';
+}
+
+function isRateLimited(clientIp) {
+  const now = Date.now();
+
+  // Limpieza perezosa de entradas expiradas para evitar crecimiento ilimitado del Map
+  if (rateLimitStore.size > 500) {
+    for (const [ip, entry] of rateLimitStore.entries()) {
+      if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+        rateLimitStore.delete(ip);
+      }
+    }
+  }
+
+  const entry = rateLimitStore.get(clientIp);
+  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    rateLimitStore.set(clientIp, { count: 1, windowStart: now });
+    return false;
+  }
+
+  entry.count++;
+  return entry.count > RATE_LIMIT_MAX_REQUESTS;
+}
 
 function getSucursalEnumId(sucursal) {
   const sucursalMap = {
@@ -39,6 +85,21 @@ export async function POST({ request }) {
     if (!request) {
       throw new Error('Request object is undefined');
     }
+
+    // Rate limiting propio por IP, antes de tocar env vars o parsear el body.
+    // Ver comentario junto a isRateLimited() más arriba para el motivo.
+    const clientIp = getClientIp(request);
+    if (isRateLimited(clientIp)) {
+      console.warn('Rate limit excedido para IP:', clientIp);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Demasiadas solicitudes. Por favor intenta nuevamente en unos minutos.'
+      }), {
+        status: 429,
+        headers
+      });
+    }
+
     console.log('Environment:', {
       nodeEnv: import.meta.env.NODE_ENV,
       platform: typeof process !== 'undefined' ? process.platform : 'unknown'
@@ -70,12 +131,12 @@ export async function POST({ request }) {
     const missingVars = requiredEnvVars.filter(varName => !import.meta.env[varName]);
     
     if (missingVars.length > 0) {
+      // Detalle completo solo en logs del servidor, nunca en la respuesta al cliente
       console.error('Variables de entorno faltantes:', missingVars);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Configuración del servidor incompleta',
-        missingVars: missingVars,
-        envStatus: envStatus
+      console.error('Estado detallado de variables:', envStatus);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Configuración del servidor incompleta'
       }), {
         status: 500,
         headers
@@ -144,20 +205,35 @@ export async function POST({ request }) {
       dataSize: JSON.stringify(leadData).length,
       hasAuth: !!import.meta.env.KOMMO_ACCESS_TOKEN
     });
-    
-    const response = await axios.post(
-      kommoUrl,
-      leadData,
-      {
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.KOMMO_ACCESS_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        httpsAgent: httpsAgent,
-        timeout: 10000
-      }
-    );
-    
+
+    // Chequeo temprano del circuit breaker: si Kommo esta bloqueado, no
+    // intentamos la request y respondemos de inmediato sin filtrar detalles internos.
+    if (isCircuitOpen()) {
+      const retryAfterMs = getCircuitRetryAfterMs();
+      console.error('Circuit breaker de Kommo abierto, request rechazada sin llegar a Kommo.', {
+        retryAfterMs
+      });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'El servicio de Kommo esta temporalmente no disponible. Por favor intenta nuevamente en unos minutos.'
+      }), {
+        status: 503,
+        headers
+      });
+    }
+
+    const response = await kommoRequest({
+      method: 'post',
+      url: kommoUrl,
+      data: leadData,
+      headers: {
+        'Authorization': `Bearer ${import.meta.env.KOMMO_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      httpsAgent: httpsAgent,
+      timeout: 10000
+    });
+
     console.log('Respuesta de Kommo:', {
       status: response.status,
       statusText: response.statusText,
@@ -188,54 +264,42 @@ export async function POST({ request }) {
       name: error.name,
       code: error.code
     });
-    
-    let errorMessage = 'Error al enviar el formulario';
-    let errorDetails = {
-      type: 'unknown',
-      message: error.message
-    };
-    
-    if (error.response) {
-      console.error('Error de respuesta HTTP:', {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data,
-        headers: error.response.headers
+
+    // Errores del governor de Kommo: respuesta clara sin filtrar detalles internos al cliente
+    if (error instanceof KommoBlockedError) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'El servicio de Kommo esta temporalmente no disponible. Por favor intenta nuevamente en unos minutos.'
+      }), {
+        status: 503,
+        headers
       });
-      errorMessage = `Error ${error.response.status}: ${error.response.statusText}`;
-      errorDetails = {
-        type: 'http_response',
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data
-      };
-    } else if (error.request) {
-      console.error('Error de request:', error.request);
-      errorMessage = 'Error de conexión con Kommo';
-      errorDetails = {
-        type: 'network',
-        message: 'No se pudo conectar con Kommo'
-      };
-    } else if (error.code === 'ENOTFOUND') {
-      errorMessage = 'Error de DNS - no se pudo resolver el dominio';
-      errorDetails = {
-        type: 'dns',
-        message: error.message
-      };
-    } else if (error.code === 'ETIMEDOUT') {
-      errorMessage = 'Timeout - la solicitud tardó demasiado';
-      errorDetails = {
-        type: 'timeout',
-        message: error.message
-      };
     }
-    
-    console.error('Enviando respuesta de error:', { errorMessage, errorDetails });
-    
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: errorMessage,
-      details: errorDetails,
+
+    if (error instanceof KommoRateLimitError) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'El servicio esta recibiendo demasiadas solicitudes en este momento. Por favor intenta nuevamente en unos segundos.'
+      }), {
+        status: 429,
+        headers
+      });
+    }
+
+    // Fallback genérico para cualquier otro error no contemplado arriba (ej. error
+    // de DNS, timeout, o una llamada a Kommo que en el futuro no pase por
+    // kommoRequest()). NUNCA se expone al cliente error.message ni error.response.data
+    // crudos — solo se loguea server-side para diagnóstico.
+    console.error('Error no contemplado en las ramas anteriores:', {
+      name: error.name,
+      code: error.code,
+      hasResponse: !!error.response,
+      hasRequest: !!error.request
+    });
+
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Error al enviar el formulario. Por favor intenta nuevamente.',
       timestamp: new Date().toISOString()
     }), {
       status: 500,
