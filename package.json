@@ -37,7 +37,9 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.10",
     "astro-compress": "^2.4.1",
+    "typescript": "^5.9.3",
     "vitest": "^4.1.11"
   },
   "pnpm": {

@@ -93,7 +93,11 @@ function parseFrontmatter(content: string): { frontmatter: BlogFrontmatter; cont
   }
 
   const [, frontmatterStr, markdownContent] = match;
-  const frontmatter: Record<string, string | number | string[]> = {};
+  // Se restringen las claves a las de BlogFrontmatter (en vez de un Record<string, ...>
+  // generico) para que el cast final a BlogFrontmatter tenga overlap valido: al compartir
+  // el mismo set de claves, TypeScript puede verificar que BlogFrontmatter es asignable a
+  // este tipo (cada valor concreto entra en la union string | number | string[]).
+  const frontmatter: Partial<Record<keyof BlogFrontmatter, string | number | string[]>> = {};
   
   // Parse YAML-like frontmatter
   const lines = frontmatterStr.split('\n');
@@ -112,14 +116,18 @@ function parseFrontmatter(content: string): { frontmatter: BlogFrontmatter; cont
       value = value.slice(1, -1);
     }
     
+    // La clave viene de un parseo dinamico (string generico); se castea a
+    // keyof BlogFrontmatter para indexar el objeto tipado sin usar `any`.
+    const frontmatterKey = key as keyof BlogFrontmatter;
+
     // Handle arrays (tags)
     if (value.startsWith('[') && value.endsWith(']')) {
       const arrayContent = value.slice(1, -1);
-      frontmatter[key] = arrayContent.split(',').map(item => item.trim().replace(/['"]/g, ''));
+      frontmatter[frontmatterKey] = arrayContent.split(',').map(item => item.trim().replace(/['"]/g, ''));
     } else if (key === 'id') {
-      frontmatter[key] = parseInt(value);
+      frontmatter[frontmatterKey] = parseInt(value);
     } else {
-      frontmatter[key] = value;
+      frontmatter[frontmatterKey] = value;
     }
   }
 
