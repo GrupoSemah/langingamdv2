@@ -1,7 +1,64 @@
 import axios from 'axios';
 import ExcelJS from 'exceljs';
+import crypto from 'node:crypto';
 
 export const prerender = false;
+
+// --- Rate limiting in-memory (por IP, ventana fija) ---
+// LIMITACIÓN CONOCIDA: este store vive en memoria del proceso. Si la app corre en
+// múltiples instancias/procesos (ej. varios workers de Node o edge functions),
+// el límite no se comparte entre ellas. Aceptable aquí porque el adapter es
+// @astrojs/node (single-instance detrás de nginx). Si se escala a multi-instancia,
+// migrar a un store compartido (ej. Redis/Upstash).
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // ventana de 1 minuto
+const RATE_LIMIT_MAX_REQUESTS = 5; // máx 5 solicitudes de reporte por IP por minuto
+const rateLimitStore = new Map(); // clientIp -> { count, windowStart }
+
+function getClientIp(request) {
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) return forwardedFor.split(',')[0].trim();
+  return request.headers.get('x-real-ip') || 'unknown';
+}
+
+function isRateLimited(clientIp) {
+  const now = Date.now();
+
+  // Limpieza perezosa de entradas expiradas para evitar crecimiento ilimitado del Map
+  if (rateLimitStore.size > 500) {
+    for (const [ip, entry] of rateLimitStore.entries()) {
+      if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+        rateLimitStore.delete(ip);
+      }
+    }
+  }
+
+  const entry = rateLimitStore.get(clientIp);
+  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    rateLimitStore.set(clientIp, { count: 1, windowStart: now });
+    return false;
+  }
+
+  entry.count++;
+  return entry.count > RATE_LIMIT_MAX_REQUESTS;
+}
+
+// Comparación timing-safe del secreto para evitar ataques de timing.
+// Maneja longitudes distintas sin lanzar excepción y sin dar una salida rápida
+// que filtre información por timing.
+function isValidSecret(provided, expected) {
+  if (typeof provided !== 'string' || typeof expected !== 'string' || expected.length === 0) {
+    return false;
+  }
+  const providedBuf = Buffer.from(provided);
+  const expectedBuf = Buffer.from(expected);
+  if (providedBuf.length !== expectedBuf.length) {
+    // Igual se hace una comparación timing-safe (contra sí mismo) para no
+    // devolver antes por longitud y reducir la señal de timing disponible.
+    crypto.timingSafeEqual(expectedBuf, expectedBuf);
+    return false;
+  }
+  return crypto.timingSafeEqual(providedBuf, expectedBuf);
+}
 
 function getCustomFieldValue(customFields, fieldId) {
   if (!customFields || !fieldId) return '';
@@ -235,9 +292,15 @@ export async function GET({ request }) {
 
   try {
     const url = new URL(request.url);
+    const clientIp = getClientIp(request);
+
+    if (isRateLimited(clientIp)) {
+      return new Response(JSON.stringify({ success: false, error: 'Demasiadas solicitudes. Intente más tarde.' }), { status: 429, headers });
+    }
+
     const secret = url.searchParams.get('secret');
 
-    if (secret !== import.meta.env.REPORTE_SECRET) {
+    if (!isValidSecret(secret, import.meta.env.REPORTE_SECRET)) {
       return new Response(JSON.stringify({ success: false, error: 'No autorizado' }), { status: 401, headers });
     }
 
@@ -263,9 +326,9 @@ export async function GET({ request }) {
     if (fromTimestamp > toTimestamp) {
       return new Response(JSON.stringify({ success: false, error: 'La fecha de inicio debe ser anterior a la fecha de fin' }), { status: 400, headers });
     }
-    const MAX_RANGE_SECONDS = 93 * 24 * 60 * 60; // 93 días en segundos
+    const MAX_RANGE_SECONDS = 365 * 24 * 60 * 60; // 365 días en segundos
     if (toTimestamp - fromTimestamp > MAX_RANGE_SECONDS) {
-      return new Response(JSON.stringify({ success: false, error: 'Rango máximo: 93 días' }), { status: 400, headers });
+      return new Response(JSON.stringify({ success: false, error: 'Rango máximo: 365 días' }), { status: 400, headers });
     }
 
     console.log(`Filtro de fechas: ${fromDate} (${fromTimestamp}) - ${toDate} (${toTimestamp})`);
@@ -282,10 +345,11 @@ export async function GET({ request }) {
     leads.sort((a, b) => a.created_at - b.created_at);
     console.log('Leads ordenados por fecha de creación (ascendente)');
 
-    const rows = [];
+    // Límite de concurrencia hacia la API de Kommo (evita saturarla y timeouts serverless)
+    const LEAD_PROCESSING_CONCURRENCY = 5;
+    let processedLeadsCount = 0;
 
-    for (let i = 0; i < leads.length; i++) {
-      const lead = leads[i];
+    async function processLead(lead) {
       let contactName = '';
       let contactPhone = '';
       let contactEmail = '';
@@ -315,7 +379,10 @@ export async function GET({ request }) {
       if (lead.status_id === STATUS.GANADO) estadoFinal = 'Ganado';
       else if (lead.status_id === STATUS.PERDIDO) estadoFinal = 'Perdido';
 
-      rows.push({
+      processedLeadsCount++;
+      if (processedLeadsCount % 50 === 0) console.log(`Procesados ${processedLeadsCount}/${leads.length} leads`);
+
+      return {
         'Fecha y hora de contacto': formatTimestamp(lead.created_at),
         'Medio que uso el lead para encontrarnos': getCustomFieldValue(cf, LEAD_FIELDS.CANAL_COMERCIAL),
         'Canal que uso el lead para contactarnos': getCustomFieldValue(cf, LEAD_FIELDS.CANAL_DEL_LEAD),
@@ -341,10 +408,30 @@ export async function GET({ request }) {
         'Visitó?': getCustomFieldValue(cf, LEAD_FIELDS.VISITO),
         'Estado final': estadoFinal,
         'Fecha de seguimiento': nextTaskDate ? formatTimestamp(nextTaskDate) : ''
-      });
-
-      if ((i + 1) % 50 === 0) console.log(`Procesados ${i + 1}/${leads.length} leads`);
+      };
     }
+
+    // Pool nativo de concurrencia limitada: mantiene N leads en vuelo simultáneamente
+    // y toma el siguiente en cuanto uno se libera, preservando el orden en `results`.
+    async function processLeadsWithConcurrency(items, limit) {
+      const results = new Array(items.length);
+      let nextIndex = 0;
+
+      async function worker() {
+        while (nextIndex < items.length) {
+          const currentIndex = nextIndex++;
+          results[currentIndex] = await processLead(items[currentIndex]);
+        }
+      }
+
+      const workerCount = Math.min(limit, items.length);
+      await Promise.all(Array.from({ length: workerCount }, () => worker()));
+      return results;
+    }
+
+    const rows = leads.length > 0
+      ? await processLeadsWithConcurrency(leads, LEAD_PROCESSING_CONCURRENCY)
+      : [];
 
     // Generar Excel con exceljs
     const workbook = new ExcelJS.Workbook();
