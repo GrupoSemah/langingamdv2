@@ -466,6 +466,10 @@ const currentLang = lang;
       closeModal();
 
       if (intent?.mode === 'whatsapp' && intent.whatsappUrl && isValidWhatsAppUrl(intent.whatsappUrl)) {
+        // Disparo silencioso (fire-and-forget) hacia la página de gracias: el usuario nunca la ve
+        // porque salta directo a WhatsApp, pero Google Ads necesita ese request para su tracking
+        // de conversión. No se usa await para no retrasar la navegación a wa.me.
+        fetch(thankYouPath, { mode: 'no-cors', keepalive: true }).catch(() => {});
         window.location.href = intent.whatsappUrl;
         return;
       }
