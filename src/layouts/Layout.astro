@@ -106,14 +106,24 @@ const {
 			window.dataLayer = window.dataLayer || [];
 			function gtag(){dataLayer.push(arguments);}
 			gtag('js', new Date());
-			
+
 			// Google Analytics 4
 			gtag('config', 'G-W9FEEJYKVT');
-			
+
 			// Google Ads Conversion Tracking
 			gtag('config', 'AW-976110472');
 		</script>
-		
+
+		<!-- Captura de atribución (gclid/gbraid/wbraid/utm_*) para conciliar leads
+			 de Kommo contra conversiones de Ads. Se corre en cada 'astro:page-load'
+			 (incluye la carga inicial) porque ClientRouter hace navegación estilo
+			 SPA y los scripts is:inline de esta sección no vuelven a ejecutarse solos. -->
+		<script>
+			import { captureAttributionFromUrl } from '../lib/attribution';
+
+			document.addEventListener('astro:page-load', captureAttributionFromUrl);
+		</script>
+
 		<!-- Microsoft Clarity (mapa de calor) -->
 		<script is:inline type="text/javascript">
 			(function(c,l,a,r,i,t,y){

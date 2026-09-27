@@ -13,6 +13,8 @@ export interface Props {
   lang?: string;
   alternateUrl?: string;
   alternateLang?: string;
+  /** Páginas transaccionales (ej. gracias) no deben indexarse ni aparecer en buscadores. */
+  noindex?: boolean;
 }
 
 const {
@@ -25,8 +27,13 @@ const {
   twitterCard = 'summary_large_image',
   lang = 'es',
   alternateUrl,
-  alternateLang
+  alternateLang,
+  noindex = false
 } = Astro.props;
+
+const robotsContent = noindex
+  ? 'noindex, nofollow'
+  : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
 
 const siteName = 'Almacenajes Mini Depósitos';
 const siteUrl = 'https://almacenajes-minidepositos.com';
@@ -95,7 +102,7 @@ const schemaData = {
 <meta name="title" content={title} />
 <meta name="description" content={description} />
 <meta name="keywords" content={keywords} />
-<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+<meta name="robots" content={robotsContent} />
 <meta name="language" content={lang} />
 <meta name="revisit-after" content="7 days" />
 <meta name="author" content="Almacenajes Mini Depósitos" />

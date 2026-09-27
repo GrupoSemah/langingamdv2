@@ -1,131 +1,123 @@
-// Lógica compartida de conversión de Google Ads para el flujo de cotización ("DU- Contacto Form").
+// Lógica compartida de conversión de Google Ads para el flujo de cotización, vía GTM.
 //
-// Camino principal: CotizacionModal.astro dispara la conversión en el postMessage
-// 'amd-lead-submitted' que emite el iframe del form (Kommo) al enviarse con éxito. Ese es el
-// disparo real de "envío exitoso" y no depende de document.referrer (que Layout.astro restringe
-// con Referrer-Policy: strict-origin-when-cross-origin, por lo que nunca llega el hostname propio
-// a la página de gracias).
+// Camino único: CotizacionModal.astro llama a `fireLeadSubmittedConversion` al recibir
+// el postMessage 'amd-lead-submitted' que emite el iframe del form (Kommo) al enviarse
+// con éxito. Esa llamada empuja un evento custom al `dataLayer`; GTM escucha ese evento
+// con un disparador de "Evento personalizado" y es GTM (no este código) quien dispara la
+// conversión real de Google Ads con la etiqueta configurada ahí — así el administrador de
+// Ads controla la etiqueta sin necesidad de un deploy de este repo.
 //
-// Red de seguridad: las páginas de gracias (gracias-cotizacion.astro / en/thank-you-quote.astro)
-// disparan la MISMA conversión solo si el modal no la disparó recientemente, para cubrir cualquier
-// otro camino legítimo hacia esas rutas sin duplicar el conteo.
+// Ya no existe una red de seguridad en las páginas de gracias: el disparador de GTM para
+// este flujo deja de ser "Vista de una página" y pasa a ser este evento custom, así que un
+// fallback ahí duplicaría conversiones sin aportar nada.
 //
-// Deduplicación: sessionStorage guarda un timestamp cuando el modal dispara. La página de gracias
-// lo consume (lee y borra) al cargar; si la marca existe y está dentro de la ventana, no vuelve a
-// disparar.
+// Deduplicación: en vez de una ventana de tiempo, se dedupea por `leadId` — sessionStorage
+// guarda los últimos IDs ya enviados. Esto cubre el caso real de que el iframe reintente el
+// postMessage (ej. el usuario no ve el cambio de página al instante y el form reintenta):
+// un mismo leadId nunca vuelve a empujar el evento al dataLayer.
 
-const CONVERSION_SEND_TO = 'AW-976110472/cotizacion_completada';
-const DEDUPE_STORAGE_KEY = 'amd_conv_fired';
-const DEDUPE_WINDOW_MS = 60_000;
+export type QuoteConversionMode = 'quote' | 'whatsapp';
 
-interface GtagWindow extends Window {
-	gtag?: (...args: unknown[]) => void;
+interface DataLayerWindow extends Window {
+  dataLayer?: unknown[];
+}
+
+const DEDUPE_STORAGE_KEY = 'amd_lead_ids_fired';
+const DEDUPE_MAX_ENTRIES = 20;
+
+/** Tiempo que se le pide a GTM esperar antes de considerar el tag disparado (lado GTM). */
+export const EVENT_CALLBACK_TIMEOUT_MS = 2000;
+
+/**
+ * Red de seguridad del lado de este script: si `eventCallback` nunca llega (ad-blocker,
+ * GTM no cargó, contenedor mal configurado), la navegación no puede quedar bloqueada
+ * esperando para siempre. Se da un margen sobre `EVENT_CALLBACK_TIMEOUT_MS` para no pisar
+ * al propio timeout de GTM en el camino feliz.
+ */
+export const NETWORK_SAFETY_TIMEOUT_MS = 2500;
+
+/**
+ * Lee la lista de leadId ya enviados desde sessionStorage. Devuelve [] ante cualquier
+ * problema (modo privado, JSON corrupto, sessionStorage no disponible) — un fallo de
+ * storage nunca debe bloquear el flujo de conversión.
+ */
+function readFiredLeadIds(): number[] {
+  try {
+    const raw = sessionStorage.getItem(DEDUPE_STORAGE_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.filter((id): id is number => typeof id === 'number');
+  } catch {
+    return [];
+  }
+}
+
+/** Guarda `leadId` en la lista de dedupe, conservando solo los últimos DEDUPE_MAX_ENTRIES. */
+function markLeadIdAsFired(leadId: number): void {
+  try {
+    const ids = readFiredLeadIds();
+    ids.push(leadId);
+    const trimmed = ids.slice(-DEDUPE_MAX_ENTRIES);
+    sessionStorage.setItem(DEDUPE_STORAGE_KEY, JSON.stringify(trimmed));
+  } catch {
+    // Sin sessionStorage no hay dedupe posible — no bloquea el disparo del evento.
+  }
 }
 
 /**
- * Dispara el evento de conversión y espera su confirmación antes de invocar `onDone`.
- * Patrón oficial de Google Ads (medir y luego navegar): usa `event_callback` para saber
- * cuándo el beacon salió, con un `setTimeout` de red de seguridad por si el callback nunca
- * llega (ad-blockers, gtag lento, etc.). Nunca lanza — un gtag roto/stubbeado no debe
- * bloquear el flujo (cierre de modal + redirección) que depende de `onDone`.
+ * Empuja el evento `amd_lead_submitted` al dataLayer. `lead_id` va como string (convención
+ * habitual de GTM/GA4 para IDs) y se omite por completo cuando no hay leadId disponible, en
+ * vez de mandar `null`, para no ensuciar variables de GTM con un valor sin sentido.
+ *
+ * `onDone` se invoca una sola vez: cuando `eventCallback` confirma que GTM procesó el
+ * evento, o cuando vence `NETWORK_SAFETY_TIMEOUT_MS` — lo que ocurra primero.
  */
-function fireConversion(onDone: () => void): void {
-	const win = window as GtagWindow;
-	let done = false;
+function pushLeadSubmittedEvent(leadId: number | null, mode: QuoteConversionMode, onDone: () => void): void {
+  const win = window as DataLayerWindow;
+  win.dataLayer = win.dataLayer ?? [];
 
-	// `viaTimeout` distingue si `finish` se resolvió por el `event_callback` real de gtag
-	// o por el timeout de red de seguridad. El snippet inline de gtag (Layout.astro) define
-	// `window.gtag` de forma síncrona sin importar si el script externo gtag/js cargó — un
-	// ad-blocker típico deja `gtag` como función válida (solo hace `dataLayer.push`), por lo
-	// que la llamada NUNCA lanza excepción y el `event_callback` simplemente no llega nunca.
-	// Sin este log, ese caso (el más común en producción) queda invisible.
-	const finish = (viaTimeout: boolean): void => {
-		if (done) return;
-		done = true;
-		if (viaTimeout) {
-			try {
-				console.error(
-					'[quoteConversion] event_callback de gtag no respondió dentro de 1s (posible ad-blocker o gtag.js bloqueado) — se continúa el flujo igual'
-				);
-			} catch {
-				// un console.error roto (webview parcheado) no debe bloquear el redirect
-			}
-		}
-		onDone();
-	};
+  let done = false;
+  const finish = (): void => {
+    if (done) return;
+    done = true;
+    onDone();
+  };
 
-	try {
-		if (typeof win.gtag === 'function') {
-			win.gtag('event', 'conversion', {
-				send_to: CONVERSION_SEND_TO,
-				event_callback: () => finish(false),
-			});
-			setTimeout(() => finish(true), 1000);
-			return;
-		}
-		console.error('[quoteConversion] window.gtag no está disponible — conversión no reportada a Google Ads');
-	} catch (err) {
-		console.error('[quoteConversion] gtag lanzó una excepción', err);
-	}
+  win.dataLayer.push({
+    event: 'amd_lead_submitted',
+    lead_id: leadId !== null ? String(leadId) : undefined,
+    lead_mode: mode,
+    eventCallback: finish,
+    eventTimeout: EVENT_CALLBACK_TIMEOUT_MS,
+  });
 
-	finish(false);
-}
-
-function markFiredForDedupe(): void {
-	try {
-		sessionStorage.setItem(DEDUPE_STORAGE_KEY, String(Date.now()));
-	} catch {
-		// sessionStorage no disponible (modo privado, cookies bloqueadas, etc.) — no bloquea el disparo.
-	}
+  setTimeout(finish, NETWORK_SAFETY_TIMEOUT_MS);
 }
 
 /**
- * Consume la marca de dedupe: la lee y la borra en la misma operación para que no quede
- * arrastrada entre visitas. Devuelve true si el modal disparó la conversión dentro de la ventana.
+ * Punto de entrada desde CotizacionModal.astro al recibir el postMessage
+ * 'amd-lead-submitted' confirmado. Dedupe por `leadId`: si ese lead ya disparó el evento
+ * (reintento del iframe), no se vuelve a empujar al dataLayer pero igual se llama a
+ * `onDone` para no bloquear la navegación. Sin `leadId` (iframe viejo cacheado que todavía
+ * no manda el campo) no hay identidad para dedupear — se deja pasar el push igual: es
+ * preferible arriesgarse a contar de más en ese caso raro que perder la conversión.
  */
-function consumeRecentDedupeMark(): boolean {
-	try {
-		const rawTimestamp = sessionStorage.getItem(DEDUPE_STORAGE_KEY);
-		sessionStorage.removeItem(DEDUPE_STORAGE_KEY);
+export function fireLeadSubmittedConversion(
+  leadId: number | null,
+  mode: QuoteConversionMode,
+  onDone: () => void
+): void {
+  if (leadId !== null && readFiredLeadIds().includes(leadId)) {
+    onDone();
+    return;
+  }
 
-		if (!rawTimestamp) return false;
+  if (leadId !== null) {
+    markLeadIdAsFired(leadId);
+  }
 
-		const firedAt = Number(rawTimestamp);
-		return !Number.isNaN(firedAt) && Date.now() - firedAt < DEDUPE_WINDOW_MS;
-	} catch {
-		// Sin sessionStorage no hay forma de saber si el modal ya disparó — se asume que no.
-		return false;
-	}
-}
-
-/**
- * Camino principal: se llama desde CotizacionModal.astro al recibir el postMessage
- * 'amd-lead-submitted'. Marca el dedupe de inmediato (el envío ya fue confirmado por el
- * form) y solo invoca `onDone` (cierre de modal + redirección) cuando el beacon de
- * conversión salió o venció el timeout de red de seguridad — así la navegación no cancela
- * el pixel.
- */
-export function fireQuoteConversionFromModal(onDone: () => void): void {
-	markFiredForDedupe();
-	fireConversion(onDone);
-}
-
-/**
- * Red de seguridad: se llama desde las páginas de gracias. Dispara la conversión solo si
- * el modal no la disparó ya en los últimos DEDUPE_WINDOW_MS. No redirige, así que no
- * necesita esperar la confirmación del beacon de forma síncrona con nada más.
- */
-export function fireQuoteConversionFallback(): void {
-	if (consumeRecentDedupeMark()) {
-		if (import.meta.env.DEV) {
-			console.log('Conversión omitida en página de gracias — ya disparada por el modal');
-		}
-		return;
-	}
-
-	fireConversion(() => {
-		if (import.meta.env.DEV) {
-			console.log('Conversión registrada en página de gracias — acceso sin paso previo por el modal');
-		}
-	});
+  pushLeadSubmittedEvent(leadId, mode, onDone);
 }
