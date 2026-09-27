@@ -15,12 +15,13 @@ const seoData = {
 ---
 
 <Layout title={seoData.title}>
-	<SEO 
+	<SEO
 		title={seoData.title}
 		description={seoData.description}
 		keywords={seoData.keywords}
 		canonical={seoData.canonical}
 		lang={seoData.lang}
+		noindex={true}
 		slot="seo"
 	/>
 	
@@ -85,8 +86,6 @@ const seoData = {
 </style>
 
 <script>
-	import { fireQuoteConversionFallback } from '../../scripts/quoteConversion';
-
 	// Confetti Animation
 	const canvasEl = document.getElementById('confetti-canvas');
 	if (!canvasEl) throw new Error('Canvas not found');
@@ -189,11 +188,10 @@ const seoData = {
 			window.location.href = '/en';
 		}
 	}, 1000);
-	
-	// Google Ads Conversion Tracking — fallback safety net.
-	// The primary trigger happens in CotizacionModal.astro on the 'amd-lead-submitted'
-	// postMessage (confirmed successful submit from the form iframe). This page only fires
-	// if that dedupe mark is absent, so it no longer depends on document.referrer (blocked by
-	// the Layout's Referrer-Policy) and never double-counts the conversion.
-	fireQuoteConversionFallback();
+
+	// Google Ads Conversion Tracking — the trigger happens in CotizacionModal.astro on the
+	// 'amd-lead-submitted' postMessage (confirmed successful submit from the form iframe),
+	// which pushes the event to the dataLayer so GTM fires the real conversion. This page no
+	// longer needs a fallback: the GTM trigger for this flow is that custom event, not a
+	// page view of this thank-you page.
 </script>

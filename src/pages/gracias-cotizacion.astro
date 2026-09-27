@@ -15,12 +15,13 @@ const seoData = {
 ---
 
 <Layout title={seoData.title}>
-	<SEO 
+	<SEO
 		title={seoData.title}
 		description={seoData.description}
 		keywords={seoData.keywords}
 		canonical={seoData.canonical}
 		lang={seoData.lang}
+		noindex={true}
 		slot="seo"
 	/>
 	
@@ -85,8 +86,6 @@ const seoData = {
 </style>
 
 <script>
-	import { fireQuoteConversionFallback } from '../scripts/quoteConversion';
-
 	// Confetti Animation
 	const canvasEl = document.getElementById('confetti-canvas');
 	if (!canvasEl) throw new Error('Canvas not found');
@@ -189,11 +188,10 @@ const seoData = {
 			window.location.href = '/';
 		}
 	}, 1000);
-	
-	// Google Ads Conversion Tracking — red de seguridad.
-	// El disparo principal ocurre en CotizacionModal.astro al recibir el postMessage
-	// 'amd-lead-submitted' (envío exitoso confirmado por el iframe del form). Esta página
-	// solo dispara si esa marca de dedupe no existe, para no depender de document.referrer
-	// (bloqueado por la Referrer-Policy del Layout) y para no contar la conversión dos veces.
-	fireQuoteConversionFallback();
+
+	// Google Ads Conversion Tracking — el disparo ocurre en CotizacionModal.astro al
+	// recibir el postMessage 'amd-lead-submitted' (envío exitoso confirmado por el iframe
+	// del form), que empuja el evento al dataLayer para que GTM dispare la conversión real.
+	// Esta página ya no necesita un fallback: el disparador de GTM para este flujo es ese
+	// evento custom, no la vista de esta página.
 </script>

@@ -282,13 +282,20 @@ const currentLang = lang;
 </style>
 
 <script>
-  import { fireQuoteConversionFromModal } from '../scripts/quoteConversion';
+  import { fireLeadSubmittedConversion } from '../scripts/quoteConversion';
   import { isValidWhatsAppUrl, resolveIntent, type ModalIntent } from '../lib/whatsapp-intent';
+  import { buildQuoteFormUrl } from '../lib/quote-form-url';
+  import { getAttributionParams } from '../lib/attribution';
 
   // ─── Tipos ───────────────────────────────────────────────────────────────────
 
+  // El iframe manda `leadId`/`mode` desde una versión reciente del form; se leen
+  // como `unknown` porque un iframe viejo cacheado puede no incluirlos todavía.
   interface AmdPostMessage {
     type: string;
+    version?: unknown;
+    leadId?: unknown;
+    mode?: unknown;
   }
 
   // ─── Estado del módulo ───────────────────────────────────────────────────────
@@ -339,9 +346,12 @@ const currentLang = lang;
 
     if (iframe && iframe.dataset.loaded !== 'true') {
       try {
-        const url = new URL(formUrl);
-        url.searchParams.set('lang', lang);
-        iframe.src = url.toString();
+        iframe.src = buildQuoteFormUrl({
+          formUrl,
+          lang,
+          mode: pendingIntent?.mode ?? 'quote',
+          attributionParams: getAttributionParams(),
+        });
         iframe.dataset.loaded = 'true';
       } catch (err) {
         console.error('PUBLIC_FORM_URL invalida o no definida:', formUrl, err);
@@ -455,21 +465,36 @@ const currentLang = lang;
     const lang = modal.dataset.lang ?? 'es';
     const thankYouPath = lang === 'en' ? '/en/thank-you-quote' : '/gracias-cotizacion';
 
-    // Capturado ANTES de fireQuoteConversionFromModal: closeModal() resetea
+    // Capturado ANTES de fireLeadSubmittedConversion: closeModal() resetea
     // pendingIntent a null, y closeModal corre dentro del callback siguiente.
     const intent = pendingIntent;
 
-    // Disparo real de la conversión de Google Ads (origin ya validado arriba, no depende de
-    // document.referrer). Cierre + redirección quedan DENTRO del callback para que la
-    // navegación no cancele el beacon de conversión antes de que salga.
-    fireQuoteConversionFromModal(() => {
+    // leadId es opcional por compatibilidad con un iframe viejo cacheado que todavía no
+    // manda el campo — en ese caso se sigue el flujo igual, solo sin poder dedupear por
+    // identidad (ver quoteConversion.ts).
+    const rawLeadId = data.leadId;
+    const leadId =
+      typeof rawLeadId === 'number' && Number.isSafeInteger(rawLeadId) && rawLeadId > 0 ? rawLeadId : null;
+    if (rawLeadId !== undefined && leadId === null) {
+      console.warn('[CotizacionModal] leadId inválido en el postMessage, se continúa sin dedupe', { rawLeadId });
+    }
+
+    // Diagnóstico no bloqueante: si el iframe reporta un mode distinto al que abrió el
+    // modal localmente, algo se desincronizó (ej. reload del iframe con querystring vieja).
+    if (data.mode !== undefined && data.mode !== intent?.mode) {
+      console.warn('[CotizacionModal] mode del postMessage no coincide con el intent local', {
+        received: data.mode,
+        local: intent?.mode,
+      });
+    }
+
+    // Empuja el evento al dataLayer para que GTM dispare la conversión real de Google Ads
+    // (origin ya validado arriba, no depende de document.referrer). Cierre + redirección
+    // quedan DENTRO del callback para que la navegación no corte el evento antes de salir.
+    fireLeadSubmittedConversion(leadId, intent?.mode ?? 'quote', () => {
       closeModal();
 
       if (intent?.mode === 'whatsapp' && intent.whatsappUrl && isValidWhatsAppUrl(intent.whatsappUrl)) {
-        // Disparo silencioso (fire-and-forget) hacia la página de gracias: el usuario nunca la ve
-        // porque salta directo a WhatsApp, pero Google Ads necesita ese request para su tracking
-        // de conversión. No se usa await para no retrasar la navegación a wa.me.
-        fetch(thankYouPath, { mode: 'no-cors', keepalive: true }).catch(() => {});
         window.location.href = intent.whatsappUrl;
         return;
       }
