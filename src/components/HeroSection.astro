@@ -1,6 +1,6 @@
 ---
 // Hero section idéntico al prototipo de Figma
-import AnimatedCTAButton from './AnimatedCTAButton.astro';
+import CotizacionWhatsApp from './CotizacionWhatsApp.astro';
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
 
 const lang = getLangFromUrl(Astro.url);
@@ -24,18 +24,26 @@ const t = useTranslations(lang);
               {t('hero.title.line1')}
             </span>
             <span class="block md:hidden text-[var(--color-dark)]">
-              {t('hero.title.line2')} <span class="text-[var(--color-primary)]">{t('hero.title.highlight')}</span>
+              {t('hero.title.line2') && `${t('hero.title.line2')} `}<span class="text-[var(--color-primary)]">{t('hero.title.highlight')}</span>
             </span>
             <span class="hidden md:block text-[var(--color-dark)] text-center lg:text-left">
-              {t('hero.title.line1')} {t('hero.title.line2')} <span class="text-[var(--color-primary)]">{t('hero.title.highlight')}</span>
+              {t('hero.title.line1')} {t('hero.title.line2') && `${t('hero.title.line2')} `}<span class="text-[var(--color-primary)]">{t('hero.title.highlight')}</span>
             </span>
           </h1>
           
-          <!-- CTA Button Animado - Movido donde estaba la descripción -->
+          <p class="mx-auto max-w-xl text-center text-lg text-gray-600 sm:text-xl lg:mx-0 lg:text-left">
+            {t('hero.subtitle.line1')} {t('hero.subtitle.line2')}
+          </p>
+
+          <!-- CTA de WhatsApp: reutiliza el flujo de CotizacionWhatsApp (modal en modo 'whatsapp') -->
           <div class="flex justify-center lg:justify-start">
-            <AnimatedCTAButton 
-              href="#cotizacion" 
-              text={t('hero.cta')}
+            <CotizacionWhatsApp
+              variant="hero"
+              source="hero"
+              buttonId="hero-whatsapp-button"
+              label={t('hero.cta')}
+              leading="🎁"
+              trailing="→"
             />
           </div>
         </div>

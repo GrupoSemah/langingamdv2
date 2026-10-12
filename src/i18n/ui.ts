@@ -18,12 +18,12 @@ export const ui = {
     'nav.menu': 'Abrir menú',
     
     // Hero
-    'hero.title.line1': 'Alquila un Minidepósito',
-    'hero.title.line2': 'y recibe',
-    'hero.title.highlight': '1 MES GRATIS',
-    'hero.subtitle.line1': '¡Reserva tu espacio hoy y guarda tus',
-    'hero.subtitle.line2': 'cosas sin costo inicial!',
-    'hero.cta': 'Obtén tu cotización',
+    'hero.title.line1': '¡TU ESPACIO EXTRA',
+    'hero.title.line2': '',
+    'hero.title.highlight': 'TE ESTÁ ESPERANDO!',
+    'hero.subtitle.line1': 'Alquila tu minidepósito y recibe una promoción especial.',
+    'hero.subtitle.line2': '',
+    'hero.cta': 'RECIBE TU PROMOCIÓN AQUÍ',
     
     // Quote Section
     'quote.title': '¿Buscas alquiler de mini depósitos en Panamá?',
@@ -266,12 +266,12 @@ export const ui = {
     'nav.menu': 'Menu',
     
     // Hero - US Market focused (length matched to Spanish)
-    'hero.title.line1': 'Rent a Storage Unit',
-    'hero.title.line2': 'and get',
-    'hero.title.highlight': '1 FREE MONTH',
-    'hero.subtitle.line1': 'Reserve your space today and store',
-    'hero.subtitle.line2': 'your belongings at no upfront cost!',
-    'hero.cta': 'Get Your Quote',
+    'hero.title.line1': 'YOUR EXTRA SPACE',
+    'hero.title.line2': '',
+    'hero.title.highlight': 'IS WAITING FOR YOU!',
+    'hero.subtitle.line1': 'Rent your mini storage unit and get a special promotion.',
+    'hero.subtitle.line2': '',
+    'hero.cta': 'GET YOUR PROMOTION HERE',
     
     // Quote Section - Professional US tone
     'quote.title': 'Need secure storage units or warehouse space in Panamá?',

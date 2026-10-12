@@ -6,8 +6,33 @@
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
 import WhatsAppIcon from './icons/WhatsAppIcon.astro';
 
+// variant 'card' = CTA de la sección de cotización (con subtítulo y beneficios);
+// variant 'hero' = solo el botón, reutilizando el mismo flujo (modal en modo 'whatsapp').
+interface Props {
+	variant?: 'card' | 'hero';
+	label?: string;
+	source?: string;
+	message?: string;
+	buttonId?: string;
+	className?: string;
+	leading?: string;
+	trailing?: string;
+}
+
+const {
+	variant = 'card',
+	label,
+	source = 'cotizacion-section',
+	message,
+	buttonId = 'cotizacion-whatsapp-button',
+	className = '',
+	leading,
+	trailing,
+} = Astro.props;
+
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
+const isHero = variant === 'hero';
 
 const WHATSAPP_NUMBER = '50767815555';
 
@@ -19,13 +44,15 @@ const prefilledMessages = {
 	en: 'Hi, I just completed the quote form on the website and would like to continue here.',
 } as const;
 
-const whatsappMessage = prefilledMessages[lang];
+const whatsappMessage = message ?? prefilledMessages[lang];
 const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
 
+const buttonLabel = label ?? t('quote.whatsapp.cta');
 const benefits = [t('quote.whatsapp.benefit1'), t('quote.whatsapp.benefit2'), t('quote.whatsapp.benefit3')];
 ---
 
-<div class="cotizacion-whatsapp-cta">
+<div class:list={['cotizacion-whatsapp-cta', className]}>
+	{!isHero && (<>
 	<!-- Encabezado sin ícono: el único ícono de WhatsApp visible en la card es el del botón
 	     principal, para no duplicarlo (feedback del Jefe) -->
 	<div class="mb-5">
@@ -56,6 +83,7 @@ const benefits = [t('quote.whatsapp.benefit1'), t('quote.whatsapp.benefit2'), t(
 			))
 		}
 	</ul>
+	</>)}
 
 	<!-- CTA principal: mismo lenguaje visual que el submit original (rounded-lg, font-bold,
 	     shadow-lg, hover:scale) en el naranja de marca EXACTO (--color-primary), igual que la
@@ -67,13 +95,31 @@ const benefits = [t('quote.whatsapp.benefit1'), t('quote.whatsapp.benefit2'), t(
 	     compartido (mismo glifo oficial que el botón flotante, ver WhatsAppButton.astro) -->
 	<button
 		type="button"
-		id="cotizacion-whatsapp-button"
+		id={buttonId}
+		data-whatsapp-cta
 		data-whatsapp-url={whatsappUrl}
-		aria-label={t('quote.whatsapp.aria')}
-		class="flex w-full items-center justify-center gap-2.5 rounded-lg bg-[var(--color-primary)] px-6 py-3.5 font-extrabold text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-[color-mix(in_srgb,var(--color-primary)_88%,black)] hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] focus-visible:ring-offset-2"
+		data-whatsapp-source={source}
+		aria-label={isHero ? undefined : t('quote.whatsapp.aria')}
+		aria-haspopup={isHero ? 'dialog' : undefined}
+		class:list={[
+			'flex items-center justify-center gap-2.5 bg-[var(--color-primary)] font-extrabold text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-[color-mix(in_srgb,var(--color-primary)_88%,black)] hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] focus-visible:ring-offset-2',
+			isHero
+				? 'w-full max-w-full rounded-full px-5 py-3.5 text-center text-sm leading-tight sm:w-auto sm:px-8 sm:py-4 sm:text-lg'
+				: 'w-full rounded-lg px-6 py-3.5',
+		]}
 	>
-		<WhatsAppIcon class="h-5 w-5 shrink-0 [filter:drop-shadow(0_1px_1px_rgba(0,0,0,0.35))]" />
-		<span class="[text-shadow:0_1px_2px_rgba(0,0,0,0.35)]">{t('quote.whatsapp.cta')}</span>
+		{isHero ? (
+			<>
+				{leading && <span aria-hidden="true">{leading}</span>}
+				<span class="[text-shadow:0_1px_2px_rgba(0,0,0,0.35)]">{buttonLabel}</span>
+				{trailing && <span aria-hidden="true">{trailing}</span>}
+			</>
+		) : (
+			<>
+				<WhatsAppIcon class="h-5 w-5 shrink-0 [filter:drop-shadow(0_1px_1px_rgba(0,0,0,0.35))]" />
+				<span class="[text-shadow:0_1px_2px_rgba(0,0,0,0.35)]">{buttonLabel}</span>
+			</>
+		)}
 	</button>
 </div>
 
@@ -82,9 +128,8 @@ const benefits = [t('quote.whatsapp.benefit1'), t('quote.whatsapp.benefit2'), t(
 	// Layout.astro) en modo 'whatsapp'. El propio modal navega a WhatsApp al enviar el Quiz;
 	// la conversión de Google Ads se dispara desde ahí (unificada), no en este click.
 	function initCotizacionWhatsAppButton() {
-		const button = document.getElementById('cotizacion-whatsapp-button');
-
-		if (button && button.dataset.whatsappModalBound !== 'true') {
+		document.querySelectorAll<HTMLButtonElement>('button[data-whatsapp-cta]').forEach((button) => {
+			if (button.dataset.whatsappModalBound === 'true') return;
 			button.dataset.whatsappModalBound = 'true';
 
 			button.addEventListener('click', () => {
@@ -93,12 +138,12 @@ const benefits = [t('quote.whatsapp.benefit1'), t('quote.whatsapp.benefit2'), t(
 						detail: {
 							mode: 'whatsapp',
 							whatsappUrl: button.dataset.whatsappUrl ?? '',
-							source: 'cotizacion-section',
+							source: button.dataset.whatsappSource ?? 'cotizacion-section',
 						},
 					}),
 				);
 			});
-		}
+		});
 	}
 
 	document.addEventListener('astro:page-load', initCotizacionWhatsAppButton);
@@ -110,7 +155,7 @@ const benefits = [t('quote.whatsapp.benefit1'), t('quote.whatsapp.benefit2'), t(
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		#cotizacion-whatsapp-button {
+		.cotizacion-whatsapp-cta button {
 			transition: none;
 		}
 	}
