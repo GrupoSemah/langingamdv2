@@ -6,7 +6,7 @@ export const seoConfig = {
     // Página principal
     home: {
       title: 'Mini Depósitos en Panamá | Almacenamiento Seguro 24/7 | Almacenajes',
-      description: 'Renta mini depósitos seguros en Panamá. Self storage 24/7 con acceso vehicular, cámaras de seguridad y 1 MES GRATIS. ¡Reserva tu espacio hoy!',
+      description: 'Renta mini depósitos seguros en Panamá. Self storage 24/7 con acceso vehicular, cámaras de seguridad y una promoción especial. ¡Reserva tu espacio hoy!',
       keywords: 'mini depósitos panamá, self storage panamá, almacenamiento seguro, bodegas alquiler panamá, mini bodegas, depósitos seguros, storage panamá, almacenaje panamá, guardar cosas panamá, espacios almacenamiento, mini warehouse panama, deposito seguro panama, alquiler bodegas panama, self storage panama city'
     },
     // Servicios
@@ -31,8 +31,8 @@ export const seoConfig = {
   en: {
     // Homepage - Optimized for #1 ranking in US market
     home: {
-      title: 'Self Storage Panama | Secure Storage Units | 1 FREE Month',
-      description: 'Premium self storage facilities in Panama City. Secure storage units with 24/7 access, climate control, and vehicle access. Get 1 FREE month - limited time offer!',
+      title: 'Self Storage Panama | Secure Storage Units | Special Promotion',
+      description: 'Premium self storage facilities in Panama City. Secure storage units with 24/7 access, climate control, and vehicle access. Get a special promotion - limited time offer!',
       keywords: 'self storage panama, storage units panama city, secure storage facility, climate controlled storage, 24/7 storage access, storage rental panama, personal storage units, business storage panama, mini warehouse rental, storage facility near me'
     },
     
