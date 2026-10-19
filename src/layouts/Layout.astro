@@ -119,9 +119,12 @@ const {
 			 (incluye la carga inicial) porque ClientRouter hace navegación estilo
 			 SPA y los scripts is:inline de esta sección no vuelven a ejecutarse solos. -->
 		<script>
-			import { captureAttributionFromUrl } from '../lib/attribution';
+			import { captureAttributionFromUrl, captureGaClientId } from '../lib/attribution';
 
-			document.addEventListener('astro:page-load', captureAttributionFromUrl);
+			document.addEventListener('astro:page-load', () => {
+				captureAttributionFromUrl();
+				captureGaClientId();
+			});
 		</script>
 
 		<!-- Microsoft Clarity (mapa de calor) -->

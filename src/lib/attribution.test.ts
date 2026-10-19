@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { captureAttributionFromUrl, getAttributionParams } from './attribution';
+import { captureAttributionFromUrl, captureGaClientId, getAttributionParams } from './attribution';
 
 const STORAGE_KEY = 'amd_attribution';
 const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
@@ -278,5 +278,123 @@ describe('getAttributionParams', () => {
     const result = getAttributionParams();
 
     expect(Array.from(result.entries())).toEqual([]);
+  });
+});
+
+function stubCookieJar(initial: Record<string, string> = {}): { writes: string[] } {
+  const jar = new Map<string, string>(Object.entries(initial));
+  const writes: string[] = [];
+  vi.stubGlobal('document', {
+    get cookie(): string {
+      return Array.from(jar.entries(), ([k, v]) => `${k}=${v}`).join('; ');
+    },
+    set cookie(raw: string) {
+      writes.push(raw);
+      const [pair] = raw.split(';');
+      const idx = pair.indexOf('=');
+      jar.set(pair.slice(0, idx), pair.slice(idx + 1));
+    },
+  });
+  return { writes };
+}
+
+describe('parámetros nuevos (utm_term, utm_content, ids de campaña)', () => {
+  it('captura los 5 nuevos y getAttributionParams devuelve los 12 con gclientid', () => {
+    const storage = createMemoryStorage();
+    storage.setItem('cookie-consent', 'accepted');
+    stubCookieJar({ _ga: 'GA1.1.1234567890.1700000000' });
+    stubWindow(
+      '?gclid=g1&gbraid=gb1&wbraid=wb1&utm_source=google&utm_medium=cpc&utm_campaign=c&utm_term=bodega%20panama&utm_content=ad1&campaignid=123&adgroupid=456&adid=789',
+      storage
+    );
+
+    captureAttributionFromUrl();
+    captureGaClientId();
+
+    const result = getAttributionParams();
+    expect(Object.fromEntries(result.entries())).toEqual({
+      gclid: 'g1',
+      gbraid: 'gb1',
+      wbraid: 'wb1',
+      utm_source: 'google',
+      utm_medium: 'cpc',
+      utm_campaign: 'c',
+      utm_term: 'bodega panama',
+      utm_content: 'ad1',
+      campaignid: '123',
+      adgroupid: '456',
+      adid: '789',
+      gclientid: '1234567890.1700000000',
+    });
+  });
+
+  it('rechaza ids no numéricos, utm_term con control y gclientid desde la URL', () => {
+    const storage = createMemoryStorage();
+    stubCookieJar();
+    stubWindow('?campaignid=12a&adgroupid=' + '9'.repeat(21) + '&adid=-5&gclientid=111.222&utm_term=a%00b&utm_content=ok', storage);
+
+    captureAttributionFromUrl();
+
+    const parsed = JSON.parse(readStoredRaw(storage) as string) as { params: Record<string, string> };
+    expect(parsed.params).toEqual({ utm_content: 'ok' });
+  });
+
+  it('descarta valores inválidos guardados al leer (storage manipulado)', () => {
+    const storage = createMemoryStorage();
+    stubCookieJar();
+    const params = { campaignid: 'abc', adid: '55', gclientid: 'x.y', gclid: 'bad value' };
+    storage.setItem(STORAGE_KEY, JSON.stringify({ capturedAt: Date.now(), params }));
+    stubWindow('', storage);
+
+    expect(Object.fromEntries(getAttributionParams().entries())).toEqual({ adid: '55' });
+  });
+});
+
+describe('captureGaClientId', () => {
+  it('lee client_id de _ga y lo fusiona sin perder lo capturado', () => {
+    const storage = createMemoryStorage();
+    storage.setItem('cookie-consent', 'accepted');
+    stubCookieJar({ _ga: 'GA1.2.55.66' });
+    stubWindow('?gclid=abc', storage);
+    captureAttributionFromUrl();
+
+    captureGaClientId();
+
+    const parsed = JSON.parse(readStoredRaw(storage) as string) as { params: Record<string, string> };
+    expect(parsed.params).toEqual({ gclid: 'abc', gclientid: '55.66' });
+  });
+});
+
+describe('cookie amd_attribution', () => {
+  it('escribe la cookie con 90 días, Path=/, SameSite=Lax y valor codificado', () => {
+    const storage = createMemoryStorage();
+    const { writes } = stubCookieJar();
+    stubWindow('?utm_source=google&utm_term=a%20b', storage);
+
+    captureAttributionFromUrl();
+
+    const raw = writes.find((w) => w.startsWith(`${STORAGE_KEY}=`)) as string;
+    expect(raw).toContain(`Max-Age=${NINETY_DAYS_MS / 1000}`);
+    expect(raw).toContain('Path=/');
+    expect(raw).toContain('SameSite=Lax');
+    expect(raw).not.toContain('Secure');
+    const value = raw.split(';')[0].slice(STORAGE_KEY.length + 1);
+    expect(JSON.parse(decodeURIComponent(value)).params).toEqual({ utm_source: 'google', utm_term: 'a b' });
+    expect(raw.length).toBeLessThan(4000);
+  });
+
+  it('cae a la cookie si localStorage está vacío y re-hidrata localStorage', () => {
+    const source = createMemoryStorage();
+    const { writes } = stubCookieJar();
+    stubWindow('?gclid=cookie123', source);
+    captureAttributionFromUrl();
+    const cookieValue = writes[0].split(';')[0].slice(STORAGE_KEY.length + 1);
+
+    const fresh = createMemoryStorage();
+    stubCookieJar({ [STORAGE_KEY]: cookieValue });
+    stubWindow('', fresh);
+
+    expect(getAttributionParams().get('gclid')).toBe('cookie123');
+    expect(readStoredRaw(fresh)).not.toBeNull();
   });
 });

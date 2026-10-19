@@ -285,7 +285,7 @@ const currentLang = lang;
   import { fireLeadSubmittedConversion } from '../scripts/quoteConversion';
   import { isValidWhatsAppUrl, resolveIntent, type ModalIntent } from '../lib/whatsapp-intent';
   import { buildQuoteFormUrl } from '../lib/quote-form-url';
-  import { getAttributionParams } from '../lib/attribution';
+  import { captureGaClientId, getAttributionParams } from '../lib/attribution';
 
   // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -346,6 +346,8 @@ const currentLang = lang;
 
     if (iframe && iframe.dataset.loaded !== 'true') {
       try {
+        // La cookie _ga puede crearse después del primer load; la URL del iframe queda fija tras esta construcción.
+        captureGaClientId();
         iframe.src = buildQuoteFormUrl({
           formUrl,
           lang,
